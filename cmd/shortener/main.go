@@ -22,7 +22,7 @@ func main() {
 
 func getHandler(res http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodGet {
-		http.Error(res, "Only GET requests are allowed!", http.StatusMethodNotAllowed)
+		http.Error(res, "Only GET requests are allowed!", http.StatusBadRequest)
 		return
 	}
 
@@ -34,13 +34,13 @@ func getHandler(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	http.Redirect(res, req, url, http.StatusMovedPermanently)
+	http.Redirect(res, req, url, http.StatusTemporaryRedirect)
 
 }
 
 func postHandler(res http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodPost {
-		http.Error(res, "Only POST requests are allowed!", http.StatusMethodNotAllowed)
+		http.Error(res, "Only POST requests are allowed!", http.StatusBadRequest)
 		return
 	}
 
@@ -53,6 +53,7 @@ func postHandler(res http.ResponseWriter, req *http.Request) {
 	keyURL := keyURL()
 	shortURL := shortURL(keyURL)
 	urls[keyURL] = string(originalURL)
+	res.WriteHeader(http.StatusCreated)
 	res.Write([]byte(shortURL))
 }
 
