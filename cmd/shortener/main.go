@@ -44,29 +44,29 @@ func postHandler(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	originalUrl, err := io.ReadAll(req.Body)
+	originalURL, err := io.ReadAll(req.Body)
 	if err != nil {
 		http.Error(res, "Key not found", http.StatusBadRequest)
 		return
 	}
 
-	keyUrl := keyUrl()
-	shortUrl := shortUrl(keyUrl)
-	urls[keyUrl] = string(originalUrl)
-	res.Write([]byte(shortUrl))
+	keyURL := keyURL()
+	shortURL := shortURL(keyURL)
+	urls[keyURL] = string(originalURL)
+	res.Write([]byte(shortURL))
 }
 
-func keyUrl() string {
+func keyURL() string {
 	const dictionary = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	const keyLen = 8
 
-	keyUrl := make([]byte, keyLen)
-	for i := range keyUrl {
-		keyUrl[i] = dictionary[rand.Intn(len(dictionary))]
+	keyURL := make([]byte, keyLen)
+	for i := range keyURL {
+		keyURL[i] = dictionary[rand.Intn(len(dictionary))]
 	}
-	return string(keyUrl)
+	return string(keyURL)
 }
 
-func shortUrl(key string) string {
+func shortURL(key string) string {
 	return fmt.Sprintf("http://localhost:8080/%s", key)
 }
