@@ -5,6 +5,7 @@ import (
 	"io"
 	"math/rand"
 	"net/http"
+	"regexp"
 )
 
 var urls = make(map[string]string)
@@ -46,15 +47,28 @@ func postHandler(res http.ResponseWriter, req *http.Request) {
 
 	originalURL, err := io.ReadAll(req.Body)
 	if err != nil {
-		http.Error(res, "Key not found", http.StatusBadRequest)
+		http.Error(res, "Something went wrong", http.StatusBadRequest)
 		return
 	}
 
+	validLink := validateLink(string(originalURL))
+	
+	if !validLink {
+		http.Error(res, "Link is bad", http.StatusBadRequest)
+		return
+	}
+		
 	keyURL := keyURL()
 	shortURL := shortURL(keyURL)
 	urls[keyURL] = string(originalURL)
+	res.Header().Set("content-type", "text/plain")
 	res.WriteHeader(http.StatusCreated)
 	res.Write([]byte(shortURL))
+}
+
+func validateLink(url string) bool {
+	matched, _ := regexp.MatchString("^(http:\\/\\/www\\.|https:\\/\\/www\\.|http:\\/\\/|https:\\/\\/|\\/|\\/\\/)?[A-z0-9_-]*?[:]?[A-z0-9_-]*?[@]?[A-z0-9]+([\\-\\.]{1}[a-z0-9]+)*\\.[a-z]{2,5}(:[0-9]{1,5})?(\\/.*)?$", url)
+	return matched
 }
 
 func keyURL() string {
