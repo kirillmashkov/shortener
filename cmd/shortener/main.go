@@ -14,9 +14,9 @@ var urls = make(map[string]string)
 
 func main() {
 	r := chi.NewRouter()
-	r.Get("/", postHandler)
-	r.Post("/{id}", getHandler)
 	r.Use(middleware.Logger)
+	r.Post("/", postHandler)
+	r.Get("/{id}", getHandler)
 
 	err := http.ListenAndServe(`:8080`, r)
 	if err != nil {
