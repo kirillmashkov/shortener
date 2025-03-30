@@ -6,16 +6,19 @@ import (
 	"math/rand"
 	"net/http"
 	"regexp"
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 var urls = make(map[string]string)
 
 func main() {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", postHandler)
-	mux.HandleFunc("/{id}", getHandler)
+	r := chi.NewRouter()
+	r.Get("/", postHandler)
+	r.Post("/{id}", getHandler)
+	r.Use(middleware.Logger)
 
-	err := http.ListenAndServe(`:8080`, mux)
+	err := http.ListenAndServe(`:8080`, r)
 	if err != nil {
 		panic(err)
 	}
