@@ -7,7 +7,7 @@ import (
 )
 
 type serverConfig struct {
-	Host string "env:\"BASE_ADDRESS\""
+	Host string "env:\"SERVER_ADDRESS\""
 	Redirect string "env:\"BASE_URL\""
 }
 
@@ -16,7 +16,7 @@ var Server serverConfig
 func init() {
 	env.Parse(&Server)
 
-	fmt.Printf("BASE_ADDRESS = %s \r\n", Server.Host)
+	fmt.Printf("SERVER_ADDRESS = %s \r\n", Server.Host)
 	fmt.Printf("BASE_URL = %s \r\n", Server.Redirect)
 
 	if Server.Host == "" {
