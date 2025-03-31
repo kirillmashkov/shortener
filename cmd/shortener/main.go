@@ -1,24 +1,32 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io"
 	"math/rand"
 	"net/http"
 	"regexp"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/kirillmashkov/shortener.git/cmd/config"
 )
 
 var urls = make(map[string]string)
 
 func main() {
+	config.Init()
+	flag.Parse()
+
+	fmt.Printf("host = %s, redirect = %s", config.Server.Host, config.Server.Redirect)
+
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Post("/", postHandler)
 	r.Get("/{id}", getHandler)
 
-	err := http.ListenAndServe(`:8080`, r)
+	err := http.ListenAndServe(config.Server.Host, r)
 	if err != nil {
 		panic(err)
 	}
@@ -86,5 +94,5 @@ func keyURL() string {
 }
 
 func shortURL(key string) string {
-	return fmt.Sprintf("http://localhost:8080/%s", key)
+	return fmt.Sprintf("http://%s/%s", config.Server.Redirect, key)
 }
