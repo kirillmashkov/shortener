@@ -65,7 +65,8 @@ func postHandler(res http.ResponseWriter, req *http.Request) {
 	validLink := validateLink(string(originalURL))
 	
 	if !validLink {
-		http.Error(res, "Link is bad", http.StatusBadRequest)
+		errorString := fmt.Sprintf("Link is bad %s", string(originalURL))
+		http.Error(res, errorString, http.StatusBadRequest)
 		return
 	}
 		
