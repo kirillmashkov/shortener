@@ -2,6 +2,7 @@ package config
 
 import (
 	"flag"
+	"fmt"
 	"github.com/caarlos0/env/v6"
 )
 
@@ -14,6 +15,9 @@ var Server serverConfig
 
 func init() {
 	env.Parse(&Server)
+
+	fmt.Printf("BASE_ADDRESS = %s \r\n", Server.Host)
+	fmt.Printf("BASE_URL = %s \r\n", Server.Redirect)
 
 	if Server.Host == "" {
 		flag.StringVar(&Server.Host, "a", "localhost:8080", "server host")
