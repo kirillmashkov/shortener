@@ -13,5 +13,5 @@ var Server serverConfig
 
 func Init() {
 	flag.StringVar(&Server.Host, "a", "localhost:8080", "server host")
-	flag.StringVar(&Server.Redirect, "b", "localhost:8080", "server redirect")
+	flag.StringVar(&Server.Redirect, "b", "http://localhost:8080", "server redirect")
 }

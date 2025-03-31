@@ -19,7 +19,7 @@ func main() {
 	config.Init()
 	flag.Parse()
 
-	fmt.Printf("host = %s, redirect = %s", config.Server.Host, config.Server.Redirect)
+	fmt.Printf("host = %s, redirect = %s \r\n", config.Server.Host, config.Server.Redirect)
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
