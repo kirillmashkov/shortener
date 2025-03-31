@@ -16,7 +16,6 @@ import (
 var urls = make(map[string]string)
 
 func main() {
-	config.Init()
 	flag.Parse()
 
 	fmt.Printf("host = %s, redirect = %s \r\n", config.Server.Host, config.Server.Redirect)

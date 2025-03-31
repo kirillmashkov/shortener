@@ -11,7 +11,7 @@ type serverConfig struct {
 
 var Server serverConfig
 
-func Init() {
+func init() {
 	flag.StringVar(&Server.Host, "a", "localhost:8080", "server host")
 	flag.StringVar(&Server.Redirect, "b", "http://localhost:8080", "server redirect")
 }
