@@ -94,5 +94,5 @@ func keyURL() string {
 }
 
 func shortURL(key string) string {
-	return fmt.Sprintf("http://%s/%s", config.Server.Redirect, key)
+	return fmt.Sprintf("%s/%s", config.Server.Redirect, key)
 }
