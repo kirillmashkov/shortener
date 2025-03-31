@@ -3,27 +3,24 @@ package config
 import (
 	"flag"
 	"fmt"
+
 	"github.com/caarlos0/env/v6"
 )
 
 type serverConfig struct {
-	Host string "env:\"SERVER_ADDRESS\""
+	Host     string "env:\"SERVER_ADDRESS\""
 	Redirect string "env:\"BASE_URL\""
 }
 
-var Server serverConfig
+var ServerEnv serverConfig
+var ServerArg serverConfig
 
 func init() {
-	env.Parse(&Server)
+	env.Parse(&ServerEnv)
 
-	fmt.Printf("SERVER_ADDRESS = %s \r\n", Server.Host)
-	fmt.Printf("BASE_URL = %s \r\n", Server.Redirect)
+	fmt.Printf("SERVER_ADDRESS = %s \r\n", ServerEnv.Host)
+	fmt.Printf("BASE_URL = %s \r\n", ServerEnv.Redirect)
 
-	if Server.Host == "" {
-		flag.StringVar(&Server.Host, "a", "localhost:8080", "server host")
-	}
-
-	if Server.Redirect == "" {
-		flag.StringVar(&Server.Redirect, "b", "http://localhost:8080", "server redirect")
-	}
+	flag.StringVar(&ServerArg.Host, "a", "localhost:8080", "server host")
+	flag.StringVar(&ServerArg.Redirect, "b", "http://localhost:8080", "server redirect")
 }

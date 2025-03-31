@@ -15,20 +15,33 @@ import (
 )
 
 var urls = make(map[string]string)
+var host string
+var redirect string
 
 func main() {
 	flag.Parse()
-
-	fmt.Printf("host = %s, redirect = %s \r\n", config.Server.Host, config.Server.Redirect)
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Post("/", postHandler)
 	r.Get("/{id}", getHandler)
 
-	err := http.ListenAndServe(config.Server.Host, r)
+	host = getConfigString(config.ServerEnv.Host, config.ServerArg.Host)
+	redirect = getConfigString(config.ServerEnv.Redirect, config.ServerArg.Redirect)
+
+	fmt.Printf("host = %s, redirect = %s \r\n", host, redirect)
+
+	err := http.ListenAndServe(host, r)
 	if err != nil {
 		panic(err)
+	}
+}
+
+func getConfigString(env string, arg string) string {
+	if env == "" {
+		return arg
+	} else {
+		return env
 	}
 }
 
@@ -65,13 +78,13 @@ func postHandler(res http.ResponseWriter, req *http.Request) {
 	url := strings.TrimSuffix(string(originalURL), "\n")
 
 	validLink := validateLink(string(url))
-	
+
 	if !validLink {
 		errorString := fmt.Sprintf("Link is bad %s", string(url))
 		http.Error(res, errorString, http.StatusBadRequest)
 		return
 	}
-		
+
 	keyURL := keyURL()
 	shortURL := shortURL(keyURL)
 	urls[keyURL] = string(url)
@@ -97,5 +110,5 @@ func keyURL() string {
 }
 
 func shortURL(key string) string {
-	return fmt.Sprintf("%s/%s", config.Server.Redirect, key)
+	return fmt.Sprintf("%s/%s", redirect, key)
 }
