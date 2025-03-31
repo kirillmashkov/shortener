@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"net/http"
 	"regexp"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -61,17 +62,19 @@ func postHandler(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	validLink := validateLink(string(originalURL))
+	url := strings.TrimSuffix(string(originalURL), "\n")
+
+	validLink := validateLink(string(url))
 	
 	if !validLink {
-		errorString := fmt.Sprintf("Link is bad %s", string(originalURL))
+		errorString := fmt.Sprintf("Link is bad %s", string(url))
 		http.Error(res, errorString, http.StatusBadRequest)
 		return
 	}
 		
 	keyURL := keyURL()
 	shortURL := shortURL(keyURL)
-	urls[keyURL] = string(originalURL)
+	urls[keyURL] = string(url)
 	res.Header().Set("content-type", "text/plain")
 	res.WriteHeader(http.StatusCreated)
 	res.Write([]byte(shortURL))
