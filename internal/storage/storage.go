@@ -20,13 +20,13 @@ func NewStoreMap() *StoreURLMap {
 	return &storeMap
 }
 
-func (storeMap *StoreURLMap) AddUrl(url string, keyURL string) {
+func (storeMap *StoreURLMap) AddURL(url string, keyURL string) {
 	storeMap.Lock()
 	storeMap.urls[keyURL] = url
 	storeMap.Unlock()
 }
 
-func (storeMap *StoreURLMap) GetUrl(keyURL string) (string, bool) {
+func (storeMap *StoreURLMap) GetURL(keyURL string) (string, bool) {
 	storeMap.RLock()
 	url, exist := storeMap.urls[keyURL]
 	storeMap.RUnlock()

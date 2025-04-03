@@ -32,7 +32,7 @@ func getHandler(res http.ResponseWriter, req *http.Request) {
 
 	key := req.URL.Path[len("/"):]
 
-	url, exist := storeURL.GetUrl(key)
+	url, exist := storeURL.GetURL(key)
 
 	if !exist {
 		http.Error(res, "Key not found", http.StatusBadRequest)
@@ -66,7 +66,7 @@ func postHandler(res http.ResponseWriter, req *http.Request) {
 
 	keyURL := keyURL()
 	shortURL := shortURL(keyURL)
-	storeURL.AddUrl(url, keyURL)
+	storeURL.AddURL(url, keyURL)
 	res.Header().Set("content-type", "text/plain")
 	res.WriteHeader(http.StatusCreated)
 	res.Write([]byte(shortURL))
