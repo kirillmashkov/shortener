@@ -4,11 +4,6 @@ import (
 	"sync"
 )
 
-type StoreURL interface {
-	AddURL(url string, keyURL string)
-	GetURL() (string, bool)
-}
-
 type StoreURLMap struct {
 	sync.RWMutex
 	urls map[string]string

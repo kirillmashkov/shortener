@@ -1,4 +1,4 @@
-package service
+package handler
 
 import (
 	"io"
@@ -54,7 +54,7 @@ func TestPostHandler(t *testing.T) {
 			request := httptest.NewRequest(http.MethodPost, "/", test.requestLink)
 			// создаём новый Recorder
 			w := httptest.NewRecorder()
-			postHandler(w, request)
+			PostHandler(w, request)
 
 			res := w.Result()
 			// проверяем код ответа
@@ -92,7 +92,7 @@ func TestGetHandler(t *testing.T) {
 			request := httptest.NewRequest(http.MethodGet, "/aaaaa", nil)
 			// создаём новый Recorder
 			w := httptest.NewRecorder()
-			getHandler(w, request)
+			GetHandler(w, request)
 
 			res := w.Result()
 			// проверяем код ответа
