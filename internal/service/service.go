@@ -9,7 +9,7 @@ import (
 	"github.com/kirillmashkov/shortener.git/internal/app"
 )
 
-type StoreURL interface {
+type storeURL interface {
 	AddURL(url string, keyURL string)
 	GetURL() (string, bool)
 }
