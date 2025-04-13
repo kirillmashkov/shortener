@@ -1,15 +1,18 @@
 package router
 
 import (
-	"github.com/go-chi/chi/v5"
 	"net/http"
-	"github.com/go-chi/chi/v5/middleware"
+
+	"github.com/go-chi/chi/v5"
 	"github.com/kirillmashkov/shortener.git/internal/httpserver/handler"
- )
+	"github.com/kirillmashkov/shortener.git/internal/httpserver/middleware/logger"
+)
 
 func Serv() http.Handler {
+	logger.Initialize()
+
 	r := chi.NewRouter()
-	r.Use(middleware.Logger)
+	r.Use(logger.Logger)
 	r.Post("/", handler.PostHandler)
 	r.Get("/{id}", handler.GetHandler)
 	return r

@@ -2,6 +2,7 @@ package app
 
 import (
 	"github.com/kirillmashkov/shortener.git/internal/storage"
+	"go.uber.org/zap"
 )
 
 type ServerConfig struct {
@@ -14,3 +15,5 @@ var ServerArg ServerConfig
 var ServerConf ServerConfig
 
 var StoreURL storage.StoreURLMap = *storage.NewStoreMap()
+
+var Log *zap.Logger = zap.NewNop()
