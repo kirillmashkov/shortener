@@ -7,8 +7,6 @@ import (
 	"github.com/kirillmashkov/shortener.git/internal/app"
 )
 
-
-
 func init() {
 	env.Parse(&app.ServerEnv)
 
