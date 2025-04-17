@@ -27,7 +27,7 @@ func GetShortURL(originalURL *url.URL) (string, bool) {
 
 func ProcessURL(originalURL string) (string, bool) {
 
-	url := strings.TrimSuffix(string(originalURL), "\n")
+	url := strings.TrimSuffix(string(originalURL), "\\n")
 
 	validLink := validateLink(url)
 	if !validLink {
