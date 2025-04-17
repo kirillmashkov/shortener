@@ -121,7 +121,7 @@ func TestPostGenerateShortURL(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			request := httptest.NewRequest(http.MethodPost, "/shorten", strings.NewReader(test.body))
+			request := httptest.NewRequest(http.MethodPost, "/api/shorten", strings.NewReader(test.body))
 			// создаём новый Recorder
 			w := httptest.NewRecorder()
 			PostGenerateShortURL(w, request)
