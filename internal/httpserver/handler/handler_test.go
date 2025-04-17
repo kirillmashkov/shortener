@@ -105,3 +105,35 @@ func TestGetHandler(t *testing.T) {
 		})
 	}
 }
+
+func TestPostGenerateShortURL(t *testing.T) {
+	tests := []struct {
+		name string
+		body string
+		expectedCode int
+	}{
+		{
+			name: "test successful create short link",
+			body: `{"url": "http://www.lenta.ru"}`,
+			expectedCode: 201,
+		},
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			request := httptest.NewRequest(http.MethodPost, "/shorten", strings.NewReader(test.body))
+			// создаём новый Recorder
+			w := httptest.NewRecorder()
+			PostGenerateShortURL(w, request)
+
+			res := w.Result()
+			// проверяем код ответа
+			assert.Equal(t, test.expectedCode, res.StatusCode)
+
+			// получаем и проверяем тело запроса
+			_, err := io.ReadAll(res.Body)
+			defer res.Body.Close()
+			require.NoError(t, err)
+		})
+	}	
+}

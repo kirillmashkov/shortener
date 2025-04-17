@@ -15,5 +15,6 @@ func Serv() http.Handler {
 	r.Use(logger.Logger)
 	r.Post("/", handler.PostHandler)
 	r.Get("/{id}", handler.GetHandler)
+	r.Post("/shorten", handler.PostGenerateShortURL)
 	return r
 }
