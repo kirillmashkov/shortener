@@ -17,7 +17,7 @@ type StoreURLMap struct {
 }
 
 type StoreFile struct {
-	Uuid        string `json:"uuid"`
+	UUID        string `json:"uuid"`
 	ShortURL    string `json:"short_url"`
 	OriginalURL string `json:"original_url"`
 }
@@ -38,7 +38,7 @@ func InitStorage() {
 	for scanner.Scan() {
 		shortURL := StoreFile{}
 		json.Unmarshal(scanner.Bytes(), &shortURL)
-		id, err = strconv.Atoi(shortURL.Uuid)
+		id, err = strconv.Atoi(shortURL.UUID)
 		if err == nil {
 			StoreURL.urls[shortURL.ShortURL] = shortURL.OriginalURL
 		}
@@ -74,7 +74,7 @@ func saveShortURLToFile(url string, originalURL string) error {
 	}
 
 	shortURLToFile := StoreFile{
-		Uuid:        strconv.Itoa(id),
+		UUID:        strconv.Itoa(id),
 		ShortURL:    url,
 		OriginalURL: originalURL,
 	}
