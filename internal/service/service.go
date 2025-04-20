@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"math/rand"
 	"net/url"
-	"regexp"
+	// "regexp"
 	"strings"
 
 	"github.com/kirillmashkov/shortener.git/internal/app"
@@ -34,10 +34,10 @@ func ProcessURL(originalURL string) (string, bool) {
 	url = strings.ReplaceAll(string(url), "\\n", "")
 	app.Log.Info("After trailing", zap.String("url", url))
 
-	validLink := validateLink(url)
-	if !validLink {
-		return "", false
-	}
+	// validLink := validateLink(url)
+	// if !validLink {
+	// 	return "", false
+	// }
 
 	keyURL := keyURL()
 	shortURL := shortURL(keyURL)
@@ -46,10 +46,10 @@ func ProcessURL(originalURL string) (string, bool) {
 
 }
 
-func validateLink(url string) bool {
-	matched, _ := regexp.MatchString("^(http:\\/\\/www\\.|https:\\/\\/www\\.|http:\\/\\/|https:\\/\\/|\\/|\\/\\/)?[A-z0-9_-]*?[:]?[A-z0-9_-]*?[@]?[A-z0-9]+([\\-\\.]{1}[a-z0-9]+)*\\.[a-z]{2,5}(:[0-9]{1,5})?(\\/.*)?$", url)
-	return matched
-}
+// func validateLink(url string) bool {
+// 	matched, _ := regexp.MatchString("^(http:\\/\\/www\\.|https:\\/\\/www\\.|http:\\/\\/|https:\\/\\/|\\/|\\/\\/)?[A-z0-9_-]*?[:]?[A-z0-9_-]*?[@]?[A-z0-9]+([\\-\\.]{1}[a-z0-9]+)*\\.[a-z]{2,5}(:[0-9]{1,5})?(\\/.*)?$", url)
+// 	return matched
+// }
 
 func keyURL() string {
 	const dictionary = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
