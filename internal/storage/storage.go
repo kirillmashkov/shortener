@@ -87,12 +87,11 @@ func saveShortURLToFile(url string, originalURL string) error {
 
 	writer := bufio.NewWriter(file)
 
+	app.Log.Info("Write short url", zap.Any("short url", shortURLToFile))
 	data, err := json.Marshal(shortURLToFile)
 	if err != nil {
 		return err
 	}
-
-	app.Log.Info("Write short url", zap.Any("short url", data))
 
 	if _, err := writer.Write(data); err != nil {
 		return err

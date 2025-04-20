@@ -31,6 +31,7 @@ func GetShortURL(originalURL *url.URL) (string, bool) {
 func ProcessURL(originalURL string) (string, bool) {
 	app.Log.Info("Original URL", zap.String("Original URL", originalURL))
 	url := strings.ReplaceAll(string(originalURL), "\n", "")
+	url = strings.ReplaceAll(string(url), "\\n", "")
 	app.Log.Info("After trailing", zap.String("url", url))
 
 	validLink := validateLink(url)
