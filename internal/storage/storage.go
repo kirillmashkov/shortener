@@ -28,6 +28,7 @@ var id int = 0
 func InitStorage() {
 	StoreURL.urls = map[string]string{}
 
+	app.Log.Info("Read storage file", zap.String("file", app.ServerArg.FileStorage))
 	file, err := os.OpenFile(app.ServerArg.FileStorage, os.O_RDONLY|os.O_CREATE, 0666)
 	if err != nil {
 		return
@@ -40,6 +41,10 @@ func InitStorage() {
 		json.Unmarshal(scanner.Bytes(), &shortURL)
 		id, err = strconv.Atoi(shortURL.UUID)
 		if err == nil {
+			app.Log.Info("Read short ulr", 
+				zap.String("shortURL", shortURL.ShortURL),
+				zap.String("OriginalURL", shortURL.OriginalURL),
+				zap.Int("id", id))
 			StoreURL.urls[shortURL.ShortURL] = shortURL.OriginalURL
 		}
 	}
@@ -68,6 +73,7 @@ func (storeMap *StoreURLMap) GetURL(keyURL string) (string, bool) {
 }
 
 func saveShortURLToFile(url string, originalURL string) error {
+	app.Log.Info("Write to file storage", zap.String("file", app.ServerArg.FileStorage))
 	file, err := os.OpenFile(app.ServerArg.FileStorage, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0666)
 	if err != nil {
 		return err
@@ -85,6 +91,8 @@ func saveShortURLToFile(url string, originalURL string) error {
 	if err != nil {
 		return err
 	}
+
+	app.Log.Info("Write short url", zap.Any("short url", data))
 
 	if _, err := writer.Write(data); err != nil {
 		return err
