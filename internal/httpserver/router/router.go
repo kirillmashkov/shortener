@@ -10,8 +10,6 @@ import (
 )
 
 func Serv() http.Handler {
-	logger.Initialize()
-
 	r := chi.NewRouter()
 	r.Use(logger.Logger)
 	r.Use(compress.Compress)

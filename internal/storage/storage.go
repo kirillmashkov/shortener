@@ -1,7 +1,14 @@
 package storage
 
 import (
+	"bufio"
+	"encoding/json"
+	"os"
+	"strconv"
 	"sync"
+
+	"github.com/kirillmashkov/shortener.git/internal/app"
+	"go.uber.org/zap"
 )
 
 type StoreURLMap struct {
@@ -9,15 +16,47 @@ type StoreURLMap struct {
 	urls map[string]string
 }
 
-func NewStoreMap() *StoreURLMap {
-	var storeMap StoreURLMap
-	storeMap.urls = map[string]string{}
-	return &storeMap
+type StoreFile struct {
+	Uuid        string `json:"uuid"`
+	ShortURL    string `json:"short_url"`
+	OriginalURL string `json:"original_url"`
+}
+
+var StoreURL StoreURLMap
+var id int = 0
+
+func InitStorage() {
+	StoreURL.urls = map[string]string{}
+
+	file, err := os.OpenFile(app.ServerArg.FileStorage, os.O_RDONLY|os.O_CREATE, 0666)
+	if err != nil {
+		return
+	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		shortURL := StoreFile{}
+		json.Unmarshal(scanner.Bytes(), &shortURL)
+		id, err = strconv.Atoi(shortURL.Uuid)
+		if err == nil {
+			StoreURL.urls[shortURL.ShortURL] = shortURL.OriginalURL
+		}
+	}
+
+	if err := scanner.Err(); err != nil {
+		app.Log.Error("Error read file", zap.Error(err))
+	}
+	id++
 }
 
 func (storeMap *StoreURLMap) AddURL(url string, keyURL string) {
 	storeMap.Lock()
-	storeMap.urls[keyURL] = url
+	err := saveShortURLToFile(keyURL, url)
+	if err == nil {
+		storeMap.urls[keyURL] = url
+		id++
+	}
 	storeMap.Unlock()
 }
 
@@ -26,4 +65,37 @@ func (storeMap *StoreURLMap) GetURL(keyURL string) (string, bool) {
 	url, exist := storeMap.urls[keyURL]
 	storeMap.RUnlock()
 	return url, exist
+}
+
+func saveShortURLToFile(url string, originalURL string) error {
+	file, err := os.OpenFile(app.ServerArg.FileStorage, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0666)
+	if err != nil {
+		return err
+	}
+
+	shortURLToFile := StoreFile{
+		Uuid:        strconv.Itoa(id),
+		ShortURL:    url,
+		OriginalURL: originalURL,
+	}
+
+	writer := bufio.NewWriter(file)
+
+	data, err := json.Marshal(shortURLToFile)
+	if err != nil {
+		return err
+	}
+
+	if _, err := writer.Write(data); err != nil {
+		return err
+	}
+
+	if err := writer.WriteByte('\n'); err != nil {
+		return err
+	}
+
+	writer.Flush()
+	file.Close()
+
+	return nil
 }

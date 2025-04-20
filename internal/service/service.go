@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strings"
 	"github.com/kirillmashkov/shortener.git/internal/app"
+	"github.com/kirillmashkov/shortener.git/internal/storage"
 )
 
 type storeURL interface {
@@ -16,7 +17,7 @@ type storeURL interface {
 
 func GetShortURL(originalURL *url.URL) (string, bool) {
 	key := originalURL.Path[len("/"):]
-	url, exist := app.StoreURL.GetURL(key)
+	url, exist := storage.StoreURL.GetURL(key)
 
 	if !exist {
 		return "", false
@@ -36,7 +37,7 @@ func ProcessURL(originalURL string) (string, bool) {
 
 	keyURL := keyURL()
 	shortURL := shortURL(keyURL)
-	app.StoreURL.AddURL(url, keyURL)
+	storage.StoreURL.AddURL(url, keyURL)
 	return shortURL, true
 
 }
