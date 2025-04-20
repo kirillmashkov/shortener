@@ -6,8 +6,10 @@ import (
 	"net/url"
 	"regexp"
 	"strings"
+
 	"github.com/kirillmashkov/shortener.git/internal/app"
 	"github.com/kirillmashkov/shortener.git/internal/storage"
+	"go.uber.org/zap"
 )
 
 type storeURL interface {
@@ -27,7 +29,9 @@ func GetShortURL(originalURL *url.URL) (string, bool) {
 }
 
 func ProcessURL(originalURL string) (string, bool) {
+	app.Log.Info("Original URL", zap.String("Original URL", originalURL))
 	url := strings.ReplaceAll(string(originalURL), "\n", "")
+	app.Log.Info("After trailing", zap.String("url", url))
 
 	validLink := validateLink(url)
 	if !validLink {
