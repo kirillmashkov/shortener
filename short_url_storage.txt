@@ -1,0 +1,4 @@
+{"uuid":"170582b2-4c63-4a3a-aff1-d8fac81e1a11","short_url":"TAUIT6UN","original_url":"https://www.lenta1311.ru"}
+{"uuid":"3cce3144-09b4-406a-8ea5-59ce4cc00fff","short_url":"Y3BN9W5Y","original_url":"https://www.lenta1311.ru"}
+{"uuid":"69575aac-dec0-4a40-b49e-6f8040256d61","short_url":"R1RPQ907","original_url":"https://www.lenta1311.ru"}
+{"uuid":"0d25fc5d-b736-4f7f-9124-9d8ac656cecc","short_url":"5OVS45IO","original_url":"https://www.lenta1411.ru"}

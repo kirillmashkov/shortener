@@ -5,6 +5,8 @@ import (
 	"io"
 	"net/http"
 	"strings"
+
+	"github.com/kirillmashkov/shortener.git/internal/app"
 )
 
 type compressWriter struct {
@@ -73,7 +75,11 @@ func Compress(next http.Handler) http.Handler {
 		if supportGzip {
 			compressWriter := newCompressWriter(w)
 			resultWriter = compressWriter
-			defer compressWriter.Close()
+			defer func() {
+				if errClose := compressWriter.Close(); errClose != nil {
+					app.Log.Error("Can't close writer when compress")
+				}
+			} ()
 		}
 
 		contentEncoding := r.Header.Get("Content-Encoding")
@@ -85,7 +91,11 @@ func Compress(next http.Handler) http.Handler {
 				return
 			}
 			r.Body = cr
-			defer cr.Close()
+			defer func() {
+				if errClose := cr.Close(); errClose != nil {
+					app.Log.Error("Can't read request when decompress")
+				}
+			}()
 		}
 
 		next.ServeHTTP(resultWriter, r)

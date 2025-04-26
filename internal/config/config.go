@@ -2,28 +2,41 @@ package config
 
 import (
 	"flag"
+	"fmt"
+
 	"github.com/caarlos0/env/v6"
-	"github.com/kirillmashkov/shortener.git/internal/app"
 	"go.uber.org/zap"
 )
 
-func init() {
-	env.Parse(&app.ServerEnv)
-
-	flag.StringVar(&app.ServerArg.Host, "a", "localhost:8080", "server host")
-	flag.StringVar(&app.ServerArg.Redirect, "b", "http://localhost:8080", "server redirect")
-	flag.StringVar(&app.ServerArg.FileStorage, "f", "short_url_storage.txt", "file storage short url")
+type ServerConfig struct {
+	Host        string "env:\"SERVER_ADDRESS\""
+	Redirect    string "env:\"BASE_URL\""
+	FileStorage string "env:\"FILE_STORAGE_PATH\""
 }
 
-func InitServerConf() {
-	app.ServerConf.Host = getConfigString(app.ServerEnv.Host, app.ServerArg.Host)
-	app.ServerConf.Redirect = getConfigString(app.ServerEnv.Redirect, app.ServerArg.Redirect)
-	app.ServerConf.FileStorage = getConfigString(app.ServerEnv.FileStorage, app.ServerArg.FileStorage)
+var ServerEnv ServerConfig
+var ServerArg ServerConfig
 
-	app.Log.Info("server config",
-		zap.String("host", app.ServerConf.Host),
-		zap.String("redirect", app.ServerConf.Redirect),
-		zap.String("file_storage", app.ServerConf.FileStorage))
+func init() {
+	err := env.Parse(&ServerEnv)
+	if err != nil {
+		fmt.Println("Can't read env variables")
+	}
+
+	flag.StringVar(&ServerArg.Host, "a", "localhost:8080", "server host")
+	flag.StringVar(&ServerArg.Redirect, "b", "http://localhost:8080", "server redirect")
+	flag.StringVar(&ServerArg.FileStorage, "f", "short_url_storage.txt", "file storage short url")
+}
+
+func InitServerConf(conf *ServerConfig, logger *zap.Logger) {
+	conf.Redirect = getConfigString(ServerEnv.Redirect, ServerArg.Redirect)
+	conf.Host = getConfigString(ServerEnv.Host, ServerArg.Host)
+	conf.FileStorage = getConfigString(ServerEnv.FileStorage, ServerArg.FileStorage)
+
+	logger.Info("server config",
+		zap.String("host", conf.Host),
+		zap.String("redirect", conf.Redirect),
+		zap.String("file_storage", conf.FileStorage))
 }
 
 func getConfigString(env string, arg string) string {
@@ -33,4 +46,3 @@ func getConfigString(env string, arg string) string {
 		return env
 	}
 }
-

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -48,7 +49,12 @@ func TestPostHandler(t *testing.T) {
 
 			// получаем и проверяем тело запроса
 			_, err := io.ReadAll(res.Body)
-			defer res.Body.Close()
+			defer func() {
+				if errClose := res.Body.Close(); errClose != nil {
+					fmt.Println("Can't close")
+				}
+			}()
+
 			require.NoError(t, err)
 		})
 	}
@@ -86,7 +92,11 @@ func TestGetHandler(t *testing.T) {
 
 			// получаем и проверяем тело запроса
 			_, err := io.ReadAll(res.Body)
-			defer res.Body.Close()
+			defer func() {
+				if errClose := res.Body.Close(); errClose != nil {
+					fmt.Println("Can't close")
+				}
+			}()
 			require.NoError(t, err)
 		})
 	}
@@ -143,7 +153,11 @@ func TestPostGenerateShortURL(t *testing.T) {
 
 			// получаем и проверяем тело запроса
 			_, err := io.ReadAll(res.Body)
-			defer res.Body.Close()
+			defer func() {
+				if errClose := res.Body.Close(); errClose != nil {
+					fmt.Println("Can't close")
+				}
+			}()
 			require.NoError(t, err)
 		})
 	}	

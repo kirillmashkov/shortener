@@ -3,17 +3,20 @@ package storage
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"os"
-	"strconv"
 	"sync"
 
-	"github.com/kirillmashkov/shortener.git/internal/app"
+	"github.com/google/uuid"
+	"github.com/kirillmashkov/shortener.git/internal/config"
 	"go.uber.org/zap"
 )
 
 type StoreURLMap struct {
-	sync.RWMutex
+	mu sync.RWMutex
 	urls map[string]string
+	logger *zap.Logger
+	cfg *config.ServerConfig
 }
 
 type StoreFile struct {
@@ -22,72 +25,91 @@ type StoreFile struct {
 	OriginalURL string `json:"original_url"`
 }
 
-var StoreURL StoreURLMap
-var id int = 0
+func New(conf *config.ServerConfig, logger *zap.Logger, config *config.ServerConfig) (*StoreURLMap, error) {
+	urls := map[string]string{}
 
-func InitStorage() {
-	StoreURL.urls = map[string]string{}
-
-	app.Log.Info("Read storage file", zap.String("file", app.ServerConf.FileStorage))
-	file, err := os.OpenFile(app.ServerConf.FileStorage, os.O_RDONLY|os.O_CREATE, 0666)
+	logger.Info("Read storage file", zap.String("file", conf.FileStorage))
+	file, err := os.OpenFile(conf.FileStorage, os.O_RDONLY|os.O_CREATE, 0666)
 	if err != nil {
-		return
+		return nil, err
 	}
-	defer file.Close()
+	defer func() {
+		if errClose := file.Close(); errClose != nil {
+			logger.Error("Can't close storage file when read")
+			err = errors.Join(errClose)
+		}
+	}()
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
 		shortURL := StoreFile{}
-		json.Unmarshal(scanner.Bytes(), &shortURL)
-		id, err = strconv.Atoi(shortURL.UUID)
-		if err == nil {
-			app.Log.Info("Read short ulr", 
-				zap.String("shortURL", shortURL.ShortURL),
-				zap.String("OriginalURL", shortURL.OriginalURL),
-				zap.Int("id", id))
-			StoreURL.urls[shortURL.ShortURL] = shortURL.OriginalURL
+		err = json.Unmarshal(scanner.Bytes(), &shortURL)
+		if err != nil {
+			logger.Error("Can't parse storage file")
+			return nil, err
 		}
+
+		logger.Info("Read short ulr", 
+			zap.String("shortURL", shortURL.ShortURL),
+			zap.String("OriginalURL", shortURL.OriginalURL),
+			zap.String("id", shortURL.UUID))
+		urls[shortURL.ShortURL] = shortURL.OriginalURL
+		
 	}
 
 	if err := scanner.Err(); err != nil {
-		app.Log.Error("Error read file", zap.Error(err))
+		logger.Error("Error read file", zap.Error(err))
 	}
-	id++
+	
+	return &StoreURLMap{
+			urls: urls,
+			logger: logger,
+			cfg: config,
+		}, nil
 }
 
-func (storeMap *StoreURLMap) AddURL(url string, keyURL string) {
-	storeMap.Lock()
-	err := saveShortURLToFile(keyURL, url)
-	if err == nil {
-		storeMap.urls[keyURL] = url
-		id++
-	}
-	storeMap.Unlock()
-}
+func (storeMap *StoreURLMap) AddURL(url string, keyURL string) error {
+	storeMap.mu.Lock()
+	defer storeMap.mu.Unlock()
 
-func (storeMap *StoreURLMap) GetURL(keyURL string) (string, bool) {
-	storeMap.RLock()
-	url, exist := storeMap.urls[keyURL]
-	storeMap.RUnlock()
-	return url, exist
-}
-
-func saveShortURLToFile(url string, originalURL string) error {
-	app.Log.Info("Write to file storage", zap.String("file", app.ServerConf.FileStorage))
-	file, err := os.OpenFile(app.ServerConf.FileStorage, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0666)
+	err := storeMap.saveShortURLToFile(keyURL, url)
 	if err != nil {
+		storeMap.logger.Error("Can't save link into file")
 		return err
 	}
 
+	storeMap.urls[keyURL] = url
+	return nil
+}
+
+func (storeMap *StoreURLMap) GetURL(keyURL string) (string, bool) {
+	storeMap.mu.RLock()
+	url, exist := storeMap.urls[keyURL]
+	storeMap.mu.RUnlock()
+	return url, exist
+}
+
+func (storeMap *StoreURLMap) saveShortURLToFile(url string, originalURL string) error {
+	storeMap.logger.Info("Write to file storage", zap.String("file", storeMap.cfg.FileStorage))
+	file, err := os.OpenFile(storeMap.cfg.FileStorage, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0666)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if errClose := file.Close(); errClose != nil {
+			storeMap.logger.Error("Can't close storage file when save it")
+		}
+	}()
+
 	shortURLToFile := StoreFile{
-		UUID:        strconv.Itoa(id),
+		UUID:        uuid.NewString(),
 		ShortURL:    url,
 		OriginalURL: originalURL,
 	}
 
 	writer := bufio.NewWriter(file)
 
-	app.Log.Info("Write short url", zap.Any("short url", shortURLToFile))
+	storeMap.logger.Info("Write short url", zap.Any("short url", shortURLToFile))
 	data, err := json.Marshal(shortURLToFile)
 	if err != nil {
 		return err
@@ -101,8 +123,9 @@ func saveShortURLToFile(url string, originalURL string) error {
 		return err
 	}
 
-	writer.Flush()
-	file.Close()
-
+	if err := writer.Flush(); err != nil {
+		return err
+	}
+	
 	return nil
 }

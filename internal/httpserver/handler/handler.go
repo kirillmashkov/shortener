@@ -5,12 +5,17 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/url"
 
 	"github.com/kirillmashkov/shortener.git/internal/app"
 	"github.com/kirillmashkov/shortener.git/internal/model"
-	"github.com/kirillmashkov/shortener.git/internal/service"
 	"go.uber.org/zap"
 )
+
+type ServiceShortURL interface {
+	GetShortURL(originalURL *url.URL) (string, bool)
+	ProcessURL(originalURL string) (string, bool)
+}
 
 func GetHandler(res http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodGet {
@@ -18,7 +23,7 @@ func GetHandler(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	url, exist := service.GetShortURL(req.URL)
+	url, exist := app.Service.GetShortURL(req.URL)
 
 	if !exist {
 		http.Error(res, "Key not found", http.StatusBadRequest)
@@ -40,7 +45,8 @@ func PostHandler(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	shortURL, result := service.ProcessURL(string(originalURL))
+
+	shortURL, result := app.Service.ProcessURL(string(originalURL))
 	if !result {
 		errorString := fmt.Sprintf("Link is bad %s", string(originalURL))
 		http.Error(res, errorString, http.StatusBadRequest)
@@ -49,7 +55,11 @@ func PostHandler(res http.ResponseWriter, req *http.Request) {
 
 	res.Header().Set("content-type", "text/plain")
 	res.WriteHeader(http.StatusCreated)
-	res.Write([]byte(shortURL))
+	_, err = res.Write([]byte(shortURL))
+	if err != nil {
+		http.Error(res, "Can't write response", http.StatusBadRequest)
+		return
+	}
 }
 
 func PostGenerateShortURL(res http.ResponseWriter, req *http.Request) {
@@ -57,7 +67,6 @@ func PostGenerateShortURL(res http.ResponseWriter, req *http.Request) {
 		http.Error(res, "Only POST requests are allowed!", http.StatusBadRequest)
 		return
 	}
-
 	var request model.URLToShortRequest
 	decoder := json.NewDecoder(req.Body)
 	if err := decoder.Decode(&request); err != nil {
@@ -67,7 +76,7 @@ func PostGenerateShortURL(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	shortURL, result := service.ProcessURL(request.OriginalURL)
+	shortURL, result := app.Service.ProcessURL(request.OriginalURL)
 	if !result {
 		errorString := fmt.Sprintf("Link is bad %s", string(request.OriginalURL))
 		http.Error(res, errorString, http.StatusBadRequest)
