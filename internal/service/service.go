@@ -18,8 +18,8 @@ type Service struct {
 	cfg     config.ServerConfig
 }
 
-func New(storage storeURL) *Service {
-	return &Service{storage: storage}
+func New(storage storeURL, config config.ServerConfig) *Service {
+	return &Service{storage: storage, cfg: config}
 }
 
 func (s *Service) GetShortURL(originalURL *url.URL) (string, bool) {

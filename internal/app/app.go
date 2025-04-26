@@ -24,7 +24,7 @@ func Initialize() error {
 		return err
 	}
 
-	Service = service.New(Storage) 
+	Service = service.New(Storage, ServerConf) 
 
 	return nil
 }
