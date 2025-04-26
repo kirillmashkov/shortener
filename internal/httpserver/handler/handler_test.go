@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/kirillmashkov/shortener.git/internal/app"
 	"github.com/kirillmashkov/shortener.git/internal/httpserver/middleware/compress"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -34,6 +35,8 @@ func TestPostHandler(t *testing.T) {
 			},
 		},
 	}
+
+	app.Initialize()
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
