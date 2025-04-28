@@ -7,3 +7,4 @@
 {"uuid":"b3d2177a-ef68-4e07-9a17-46241a035e71","short_url":"PCBAC46M","original_url":"https://www.lenta1.ru\\n"}
 {"uuid":"f5f9c5da-8e07-461f-b158-492a1cc97fd5","short_url":"X61BWUOO","original_url":"https://www.lenta1.ru\\n"}
 {"uuid":"5eafa683-8ead-4a92-b541-ed0d06352831","short_url":"X89JK6FG","original_url":"https://www.lenta1.ru\\n"}
+{"uuid":"8400b2eb-8f0f-4574-b16a-2557c6d4b990","short_url":"KFE9TCB6","original_url":"https://www.lenta1.ru\\n"}

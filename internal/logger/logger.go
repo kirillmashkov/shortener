@@ -32,7 +32,6 @@ func Initialize() error {
 
 	data, err := os.ReadFile(filenameConfig)
 	if err != nil {
-		fmt.Printf("Can't read file %s", filenameConfig)
 		return err
 	}
 

@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"log"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/kirillmashkov/shortener.git/internal/app"
@@ -36,8 +37,15 @@ func TestPostHandler(t *testing.T) {
 		},
 	}
 
-	app.Initialize()
+	err := app.Initialize()
+	if err != nil {
+		log.SetPrefix("ERROR")
+		log.Println("Can't initialize app")
+		return
+	}
 
+	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
+	
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 
@@ -54,7 +62,8 @@ func TestPostHandler(t *testing.T) {
 			_, err := io.ReadAll(res.Body)
 			defer func() {
 				if errClose := res.Body.Close(); errClose != nil {
-					fmt.Println("Can't close")
+					log.SetPrefix("ERROR")
+					log.Println("Can't close io stream in test")
 				}
 			}()
 

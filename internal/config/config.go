@@ -2,8 +2,6 @@ package config
 
 import (
 	"flag"
-	"fmt"
-
 	"github.com/caarlos0/env/v6"
 	"go.uber.org/zap"
 )
@@ -18,17 +16,17 @@ var ServerEnv ServerConfig
 var ServerArg ServerConfig
 
 func init() {
-	err := env.Parse(&ServerEnv)
-	if err != nil {
-		fmt.Println("Can't read env variables")
-	}
-
 	flag.StringVar(&ServerArg.Host, "a", "localhost:8080", "server host")
 	flag.StringVar(&ServerArg.Redirect, "b", "http://localhost:8080", "server redirect")
 	flag.StringVar(&ServerArg.FileStorage, "f", "short_url_storage.txt", "file storage short url")
 }
 
 func InitServerConf(conf *ServerConfig, logger *zap.Logger) {
+	err := env.Parse(&ServerEnv)
+	if err != nil {
+		logger.Error("Can't read env variables")
+	}
+
 	conf.Redirect = getConfigString(ServerEnv.Redirect, ServerArg.Redirect)
 	conf.Host = getConfigString(ServerEnv.Host, ServerArg.Host)
 	conf.FileStorage = getConfigString(ServerEnv.FileStorage, ServerArg.FileStorage)
