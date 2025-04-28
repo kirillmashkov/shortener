@@ -1,7 +1,6 @@
 package logger
 
 import (
-	"fmt"
 	"os"
 
 	"github.com/kirillmashkov/shortener.git/internal/app"
