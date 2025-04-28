@@ -1,19 +1,29 @@
 package handler
 
 import (
-	"net/http"
-	"github.com/kirillmashkov/shortener.git/internal/service"
-	"io"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+
+	"github.com/kirillmashkov/shortener.git/internal/app"
+	"github.com/kirillmashkov/shortener.git/internal/model"
+	"go.uber.org/zap"
 )
+
+type ServiceShortURL interface {
+	GetShortURL(originalURL *url.URL) (string, bool)
+	ProcessURL(originalURL string) (string, bool)
+}
 
 func GetHandler(res http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodGet {
 		http.Error(res, "Only GET requests are allowed!", http.StatusBadRequest)
 		return
 	}
-	
-	url, exist := service.GetShortURL(req.URL)
+
+	url, exist := app.Service.GetShortURL(req.URL)
 
 	if !exist {
 		http.Error(res, "Key not found", http.StatusBadRequest)
@@ -35,7 +45,8 @@ func PostHandler(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	shortURL, result := service.ProcessURL(string(originalURL))
+
+	shortURL, result := app.Service.ProcessURL(string(originalURL))
 	if !result {
 		errorString := fmt.Sprintf("Link is bad %s", string(originalURL))
 		http.Error(res, errorString, http.StatusBadRequest)
@@ -44,6 +55,43 @@ func PostHandler(res http.ResponseWriter, req *http.Request) {
 
 	res.Header().Set("content-type", "text/plain")
 	res.WriteHeader(http.StatusCreated)
-	res.Write([]byte(shortURL))
+	_, err = res.Write([]byte(shortURL))
+	if err != nil {
+		http.Error(res, "Can't write response", http.StatusBadRequest)
+		return
+	}
+}
 
+func PostGenerateShortURL(res http.ResponseWriter, req *http.Request) {
+	if req.Method != http.MethodPost {
+		http.Error(res, "Only POST requests are allowed!", http.StatusBadRequest)
+		return
+	}
+	var request model.URLToShortRequest
+	decoder := json.NewDecoder(req.Body)
+	if err := decoder.Decode(&request); err != nil {
+		
+		app.Log.Debug("cannot parse request JSON body", zap.Error(err))
+		http.Error(res, "cannot parse request JSON body", http.StatusBadRequest)
+		return
+	}
+
+	shortURL, result := app.Service.ProcessURL(request.OriginalURL)
+	if !result {
+		errorString := fmt.Sprintf("Link is bad %s", string(request.OriginalURL))
+		http.Error(res, errorString, http.StatusBadRequest)
+		return
+	}
+
+	response := model.ShortToURLReponse {
+		ShortURL: shortURL,
+	}
+
+	res.Header().Set("Content-Type", "application/json")
+	res.WriteHeader(http.StatusCreated)
+	encoder := json.NewEncoder(res)
+    if err := encoder.Encode(response); err != nil {
+        app.Log.Debug("error encoding response", zap.Error(err))
+        return
+    }
 }

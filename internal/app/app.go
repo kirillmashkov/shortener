@@ -2,15 +2,29 @@ package app
 
 import (
 	"github.com/kirillmashkov/shortener.git/internal/storage"
+	"github.com/kirillmashkov/shortener.git/internal/service"
+	"github.com/kirillmashkov/shortener.git/internal/config"
+	"go.uber.org/zap"
 )
 
-type ServerConfig struct {
-	Host     string "env:\"SERVER_ADDRESS\""
-	Redirect string "env:\"BASE_URL\""
+var ServerConf config.ServerConfig
+
+var Storage *storage.StoreURLMap
+var Service *service.Service
+
+var Log *zap.Logger = zap.NewNop()
+
+func Initialize() error {
+	var err error
+	
+	config.InitServerConf(&ServerConf, Log)
+
+	Storage, err = storage.New(&ServerConf, Log, &ServerConf)
+	if err != nil {
+		return err
+	}
+
+	Service = service.New(Storage, ServerConf) 
+
+	return nil
 }
-
-var ServerEnv ServerConfig
-var ServerArg ServerConfig
-var ServerConf ServerConfig
-
-var StoreURL storage.StoreURLMap = *storage.NewStoreMap()

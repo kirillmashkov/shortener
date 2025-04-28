@@ -4,19 +4,27 @@ import (
 	"fmt"
 	"math/rand"
 	"net/url"
-	"regexp"
-	"strings"
-	"github.com/kirillmashkov/shortener.git/internal/app"
+
+	"github.com/kirillmashkov/shortener.git/internal/config"
 )
 
 type storeURL interface {
-	AddURL(url string, keyURL string)
-	GetURL() (string, bool)
+	AddURL(url string, keyURL string) error
+	GetURL(keyURL string) (string, bool)
 }
 
-func GetShortURL(originalURL *url.URL) (string, bool) {
+type Service struct {
+	storage storeURL
+	cfg     config.ServerConfig
+}
+
+func New(storage storeURL, config config.ServerConfig) *Service {
+	return &Service{storage: storage, cfg: config}
+}
+
+func (s *Service) GetShortURL(originalURL *url.URL) (string, bool) {
 	key := originalURL.Path[len("/"):]
-	url, exist := app.StoreURL.GetURL(key)
+	url, exist := s.storage.GetURL(key)
 
 	if !exist {
 		return "", false
@@ -25,28 +33,17 @@ func GetShortURL(originalURL *url.URL) (string, bool) {
 	return url, true
 }
 
-func ProcessURL(originalURL string) (string, bool) {
-
-	url := strings.TrimSuffix(string(originalURL), "\n")
-
-	validLink := validateLink(url)
-	if !validLink {
+func (s *Service) ProcessURL(originalURL string) (string, bool) {
+	keyURL := s.keyURL()
+	shortURL := s.shortURL(keyURL)
+	if err := s.storage.AddURL(originalURL, keyURL); err != nil {
 		return "", false
 	}
-
-	keyURL := keyURL()
-	shortURL := shortURL(keyURL)
-	app.StoreURL.AddURL(url, keyURL)
 	return shortURL, true
 
 }
 
-func validateLink(url string) bool {
-	matched, _ := regexp.MatchString("^(http:\\/\\/www\\.|https:\\/\\/www\\.|http:\\/\\/|https:\\/\\/|\\/|\\/\\/)?[A-z0-9_-]*?[:]?[A-z0-9_-]*?[@]?[A-z0-9]+([\\-\\.]{1}[a-z0-9]+)*\\.[a-z]{2,5}(:[0-9]{1,5})?(\\/.*)?$", url)
-	return matched
-}
-
-func keyURL() string {
+func (s *Service) keyURL() string {
 	const dictionary = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 	const keyLen = 8
 
@@ -57,6 +54,6 @@ func keyURL() string {
 	return string(keyURL)
 }
 
-func shortURL(key string) string {
-	return fmt.Sprintf("%s/%s", app.ServerConf.Redirect, key)
+func (s *Service) shortURL(key string) string {
+	return fmt.Sprintf("%s/%s", s.cfg.Redirect, key)
 }
