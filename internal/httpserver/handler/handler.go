@@ -102,7 +102,7 @@ func Ping(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	err := app.ServiceUtils.Ping_DB()
+	err := app.ServiceUtils.PingDB()
 	if err != nil {
 		http.Error(res, "DB is unavailable", http.StatusInternalServerError)
 		return
