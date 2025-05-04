@@ -14,7 +14,7 @@ func NewServiceUtils(db *database.Database, log *zap.Logger) *ServiceUtils {
 	return &ServiceUtils{db: db, log: log}
 }
 
-func (su *ServiceUtils) Ping_DB() error {
+func (su *ServiceUtils) PingDB() error {
 	if err := su.db.Ping(); err != nil {
 		su.log.Error("Error ping DB", zap.Error(err))
 		return err
