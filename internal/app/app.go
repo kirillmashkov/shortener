@@ -27,7 +27,6 @@ func Initialize() error {
 	err = Database.Open()
 	if err != nil {
 		Log.Error("Error open connection db", zap.Error(err))
-		return err
 	}
 
 	Storage, err = storage.New(&ServerConf, Log, &ServerConf)

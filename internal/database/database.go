@@ -2,6 +2,7 @@ package database
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -18,6 +19,9 @@ func New(config *config.ServerConfig) *Database {
 }
 
 func (d *Database) Ping() error {
+	if d.conn == nil {
+		return errors.New("no connection to db")
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 1 * time.Second)
 	defer cancel()
 
