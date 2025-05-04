@@ -95,3 +95,18 @@ func PostGenerateShortURL(res http.ResponseWriter, req *http.Request) {
         return
     }
 }
+
+func Ping(res http.ResponseWriter, req *http.Request) {
+	if req.Method != http.MethodGet {
+		http.Error(res, "Only GET requests are allowed!", http.StatusBadRequest)
+		return
+	}
+
+	err := app.ServiceUtils.Ping_DB()
+	if err != nil {
+		http.Error(res, "DB is unavailable", http.StatusInternalServerError)
+		return
+	}
+
+	res.WriteHeader(http.StatusOK)
+}
