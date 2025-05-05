@@ -1,7 +1,8 @@
-package storage
+package memory
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"errors"
 	"os"
@@ -68,7 +69,7 @@ func New(conf *config.ServerConfig, logger *zap.Logger, config *config.ServerCon
 		}, nil
 }
 
-func (storeMap *StoreURLMap) AddURL(url string, keyURL string) error {
+func (storeMap *StoreURLMap) AddURL(ctx context.Context, url string, keyURL string) error {
 	storeMap.mu.Lock()
 	defer storeMap.mu.Unlock()
 
@@ -82,7 +83,7 @@ func (storeMap *StoreURLMap) AddURL(url string, keyURL string) error {
 	return nil
 }
 
-func (storeMap *StoreURLMap) GetURL(keyURL string) (string, bool) {
+func (storeMap *StoreURLMap) GetURL(ctx context.Context, keyURL string) (string, bool) {
 	storeMap.mu.RLock()
 	url, exist := storeMap.urls[keyURL]
 	storeMap.mu.RUnlock()

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -13,8 +14,8 @@ import (
 )
 
 type ServiceShortURL interface {
-	GetShortURL(originalURL *url.URL) (string, bool)
-	ProcessURL(originalURL string) (string, bool)
+	GetShortURL(ctx context.Context, originalURL *url.URL) (string, bool)
+	ProcessURL(ctx context.Context, originalURL string) (string, bool)
 }
 
 func GetHandler(res http.ResponseWriter, req *http.Request) {
@@ -23,7 +24,7 @@ func GetHandler(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	url, exist := app.Service.GetShortURL(req.URL)
+	url, exist := app.Service.GetShortURL(req.Context(), req.URL)
 
 	if !exist {
 		http.Error(res, "Key not found", http.StatusBadRequest)
@@ -46,7 +47,7 @@ func PostHandler(res http.ResponseWriter, req *http.Request) {
 	}
 
 
-	shortURL, result := app.Service.ProcessURL(string(originalURL))
+	shortURL, result := app.Service.ProcessURL(req.Context(), string(originalURL))
 	if !result {
 		errorString := fmt.Sprintf("Link is bad %s", string(originalURL))
 		http.Error(res, errorString, http.StatusBadRequest)
@@ -76,7 +77,7 @@ func PostGenerateShortURL(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	shortURL, result := app.Service.ProcessURL(request.OriginalURL)
+	shortURL, result := app.Service.ProcessURL(req.Context(), request.OriginalURL)
 	if !result {
 		errorString := fmt.Sprintf("Link is bad %s", string(request.OriginalURL))
 		http.Error(res, errorString, http.StatusBadRequest)
@@ -94,4 +95,19 @@ func PostGenerateShortURL(res http.ResponseWriter, req *http.Request) {
         app.Log.Debug("error encoding response", zap.Error(err))
         return
     }
+}
+
+func Ping(res http.ResponseWriter, req *http.Request) {
+	if req.Method != http.MethodGet {
+		http.Error(res, "Only GET requests are allowed!", http.StatusBadRequest)
+		return
+	}
+
+	err := app.ServiceUtils.PingDB()
+	if err != nil {
+		http.Error(res, "DB is unavailable", http.StatusInternalServerError)
+		return
+	}
+
+	res.WriteHeader(http.StatusOK)
 }
