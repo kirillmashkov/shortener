@@ -16,6 +16,7 @@ import (
 type ServiceShortURL interface {
 	GetShortURL(ctx context.Context, originalURL *url.URL) (string, bool)
 	ProcessURL(ctx context.Context, originalURL string) (string, bool)
+	ProcessURLBatch(ctx context.Context, originalURLs []model.URLToShortBatchRequest) ([]model.ShortToURLBatchResponse, error)
 }
 
 func GetHandler(res http.ResponseWriter, req *http.Request) {
@@ -71,7 +72,6 @@ func PostGenerateShortURL(res http.ResponseWriter, req *http.Request) {
 	var request model.URLToShortRequest
 	decoder := json.NewDecoder(req.Body)
 	if err := decoder.Decode(&request); err != nil {
-		
 		app.Log.Debug("cannot parse request JSON body", zap.Error(err))
 		http.Error(res, "cannot parse request JSON body", http.StatusBadRequest)
 		return
@@ -88,6 +88,34 @@ func PostGenerateShortURL(res http.ResponseWriter, req *http.Request) {
 		ShortURL: shortURL,
 	}
 
+	res.Header().Set("Content-Type", "application/json")
+	res.WriteHeader(http.StatusCreated)
+	encoder := json.NewEncoder(res)
+    if err := encoder.Encode(response); err != nil {
+        app.Log.Debug("error encoding response", zap.Error(err))
+        return
+    }
+}
+
+func PostGenerateShortURLBatch(res http.ResponseWriter, req *http.Request) {
+	if req.Method != http.MethodPost {
+		http.Error(res, "Only POST requests are allowed!", http.StatusBadRequest)
+		return
+	}
+
+	var request []model.URLToShortBatchRequest
+	decoder := json.NewDecoder(req.Body)
+	if err := decoder.Decode(&request); err != nil {
+		app.Log.Debug("cannot parse request JSON body", zap.Error(err))
+		http.Error(res, "cannot parse request JSON body", http.StatusBadRequest)
+		return
+	}
+
+	response, err := app.Service.ProcessURLBatch(req.Context(), request)
+	if err != nil {
+		http.Error(res, "Can't store url batch", http.StatusBadRequest)
+		return
+	}
 	res.Header().Set("Content-Type", "application/json")
 	res.WriteHeader(http.StatusCreated)
 	encoder := json.NewEncoder(res)

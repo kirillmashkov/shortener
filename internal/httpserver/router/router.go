@@ -16,6 +16,8 @@ func Serv() http.Handler {
 	r.Post("/", handler.PostHandler)
 	r.Get("/{id}", handler.GetHandler)
 	r.Post("/api/shorten", handler.PostGenerateShortURL)
+	r.Post("/api/shorten/batch", handler.PostGenerateShortURLBatch)
 	r.Get("/ping", handler.Ping)
+
 	return r
 }
