@@ -28,7 +28,7 @@ func (r *RepositoryShortURL) AddURL(ctx context.Context, url string, keyURL stri
 		return err
 	}
 	
-	_, err = r.db.conn.Exec(ctx, "insert into shorturl (id, short_url, original_url) values ($1, $2, $3)", uuid.NewString(), keyURL, url)
+	_, err = tx.Exec(ctx, "insert into shorturl (id, short_url, original_url) values ($1, $2, $3)", uuid.NewString(), keyURL, url)
 	if err != nil {
 		r.log.Error("Error insert short url ", 
 			zap.String("key", keyURL),
@@ -54,11 +54,11 @@ func (r *RepositoryShortURL) GetURL(ctx context.Context, keyURL string) (string,
 	ctx, cancel := context.WithTimeout(ctx, 1 * time.Second)
 	defer cancel()
 
-	var original_url string
-	err := r.db.conn.QueryRow(ctx, "select original_url from shorturl where short_url = $1", keyURL).Scan(&original_url)
+	var originalURL string
+	err := r.db.conn.QueryRow(ctx, "select original_url from shorturl where short_url = $1", keyURL).Scan(&originalURL)
 	if err != nil {
 		return "", false
 	}
 
-	return original_url, true
+	return originalURL, true
 }
