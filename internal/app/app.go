@@ -2,19 +2,20 @@ package app
 
 import (
 	"github.com/kirillmashkov/shortener.git/internal/config"
-	"github.com/kirillmashkov/shortener.git/internal/database"
+	"github.com/kirillmashkov/shortener.git/internal/storage/database"
 	"github.com/kirillmashkov/shortener.git/internal/service"
-	"github.com/kirillmashkov/shortener.git/internal/storage"
+	"github.com/kirillmashkov/shortener.git/internal/storage/memory"
 	"go.uber.org/zap"
 )
 
 var ServerConf config.ServerConfig
 
-var Storage *storage.StoreURLMap
+var Storage *memory.StoreURLMap
 var Service *service.Service
 var ServiceUtils *service.ServiceUtils
 
 var Database *database.Database
+var RepositoryShortURL *database.RepositoryShortURL
 
 var Log *zap.Logger = zap.NewNop()
 
@@ -27,14 +28,18 @@ func Initialize() error {
 	err = Database.Open()
 	if err != nil {
 		Log.Error("Error open connection db", zap.Error(err))
+		Service = service.New(Storage, ServerConf)
+	} else {
+		Database.CreateScheme()
+		RepositoryShortURL = database.NewRepositoryShortURL(Database, Log)
+		Service = service.New(RepositoryShortURL, ServerConf)
 	}
 
-	Storage, err = storage.New(&ServerConf, Log, &ServerConf)
+	Storage, err = memory.New(&ServerConf, Log, &ServerConf)
 	if err != nil {
 		return err
 	}
 
-	Service = service.New(Storage, ServerConf)
 	ServiceUtils = service.NewServiceUtils(Database, Log)
 
 	return nil

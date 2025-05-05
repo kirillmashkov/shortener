@@ -1,7 +1,7 @@
 package service
 
 import (
-	"github.com/kirillmashkov/shortener.git/internal/database"
+	"github.com/kirillmashkov/shortener.git/internal/storage/database"
 	"go.uber.org/zap"
 )
 
