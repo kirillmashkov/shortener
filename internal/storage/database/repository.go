@@ -12,7 +12,7 @@ import (
 )
 
 type RepositoryShortURL struct {
-	db *Database
+	db  *Database
 	log *zap.Logger
 }
 
@@ -21,7 +21,7 @@ func NewRepositoryShortURL(db *Database, log *zap.Logger) *RepositoryShortURL {
 }
 
 func (r *RepositoryShortURL) AddURL(ctx context.Context, url string, keyURL string) error {
-	ctx, cancel := context.WithTimeout(ctx, 1 * time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
 	defer cancel()
 
 	tx, err := r.db.conn.Begin(ctx)
@@ -29,7 +29,7 @@ func (r *RepositoryShortURL) AddURL(ctx context.Context, url string, keyURL stri
 		r.log.Error("Error open tran", zap.Error(err))
 		return err
 	}
-	
+
 	err = r.insertShortURL(ctx, tx, keyURL, url)
 	if err != nil {
 		return err
@@ -39,12 +39,12 @@ func (r *RepositoryShortURL) AddURL(ctx context.Context, url string, keyURL stri
 	if err != nil {
 		r.log.Error("Error commit tran", zap.Error(err))
 	}
-	
+
 	return nil
 }
 
-func (r *RepositoryShortURL) AddBatchURL(ctx context.Context, shortOriginalURL []model.ShortOriginalUrl) error {
-	ctx, cancel := context.WithTimeout(ctx, 1 * time.Second)
+func (r *RepositoryShortURL) AddBatchURL(ctx context.Context, shortOriginalURL []model.ShortOriginalURL) error {
+	ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
 	defer cancel()
 
 	tx, err := r.db.conn.Begin(ctx)
@@ -71,11 +71,11 @@ func (r *RepositoryShortURL) AddBatchURL(ctx context.Context, shortOriginalURL [
 func (r *RepositoryShortURL) insertShortURL(ctx context.Context, tx pgx.Tx, keyURL string, url string) error {
 	_, err := tx.Exec(ctx, "insert into shorturl (id, short_url, original_url) values ($1, $2, $3)", uuid.NewString(), keyURL, url)
 	if err != nil {
-		r.log.Error("Error insert short url ", 
+		r.log.Error("Error insert short url ",
 			zap.String("key", keyURL),
-			zap.String("original url", url), 
+			zap.String("original url", url),
 			zap.Error(err))
-		
+
 		if errRollback := tx.Rollback(ctx); errRollback != nil {
 			return errors.Join(err, errRollback)
 		}
@@ -87,7 +87,7 @@ func (r *RepositoryShortURL) insertShortURL(ctx context.Context, tx pgx.Tx, keyU
 }
 
 func (r *RepositoryShortURL) GetURL(ctx context.Context, keyURL string) (string, bool) {
-	ctx, cancel := context.WithTimeout(ctx, 1 * time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
 	defer cancel()
 
 	var originalURL string

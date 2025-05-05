@@ -13,7 +13,7 @@ import (
 type storeURL interface {
 	AddURL(ctx context.Context, url string, keyURL string) error
 	GetURL(ctx context.Context, keyURL string) (string, bool)
-	AddBatchURL(ctx context.Context, shortOriginalURL []model.ShortOriginalUrl) error
+	AddBatchURL(ctx context.Context, shortOriginalURL []model.ShortOriginalURL) error
 }
 
 type Service struct {
@@ -47,16 +47,16 @@ func (s *Service) ProcessURL(ctx context.Context, originalURL string) (string, b
 }
 
 func (s *Service) ProcessURLBatch(ctx context.Context, originalURLs []model.URLToShortBatchRequest) ([]model.ShortToURLBatchResponse, error) {
-	var soURLs []model.ShortOriginalUrl
+	var soURLs []model.ShortOriginalURL
 	var results []model.ShortToURLBatchResponse
 
 	for _, originalURL := range originalURLs {
 		keyURL := s.keyURL()
 		shortURL := s.shortURL(keyURL)
-		soURLs = append(soURLs, model.ShortOriginalUrl{Key: keyURL, OriginalURL: originalURL.OriginalURL})
-		results = append(results, model.ShortToURLBatchResponse{CorrelationId: originalURL.CorrelationId, ShortURL: shortURL})
+		soURLs = append(soURLs, model.ShortOriginalURL{Key: keyURL, OriginalURL: originalURL.OriginalURL})
+		results = append(results, model.ShortToURLBatchResponse{CorrelationID: originalURL.CorrelationID, ShortURL: shortURL})
 	}
-	
+
 	err := s.storage.AddBatchURL(ctx, soURLs)
 	if err != nil {
 		return nil, err

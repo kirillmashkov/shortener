@@ -15,10 +15,10 @@ import (
 )
 
 type StoreURLMap struct {
-	mu sync.RWMutex
-	urls map[string]string
+	mu     sync.RWMutex
+	urls   map[string]string
 	logger *zap.Logger
-	cfg *config.ServerConfig
+	cfg    *config.ServerConfig
 }
 
 type StoreFile struct {
@@ -51,23 +51,23 @@ func New(conf *config.ServerConfig, logger *zap.Logger, config *config.ServerCon
 			return nil, err
 		}
 
-		logger.Info("Read short ulr", 
+		logger.Info("Read short ulr",
 			zap.String("shortURL", shortURL.ShortURL),
 			zap.String("OriginalURL", shortURL.OriginalURL),
 			zap.String("id", shortURL.UUID))
 		urls[shortURL.ShortURL] = shortURL.OriginalURL
-		
+
 	}
 
 	if err := scanner.Err(); err != nil {
 		logger.Error("Error read file", zap.Error(err))
 	}
-	
+
 	return &StoreURLMap{
-			urls: urls,
-			logger: logger,
-			cfg: config,
-		}, nil
+		urls:   urls,
+		logger: logger,
+		cfg:    config,
+	}, nil
 }
 
 func (storeMap *StoreURLMap) AddURL(ctx context.Context, url string, keyURL string) error {
@@ -84,7 +84,7 @@ func (storeMap *StoreURLMap) AddURL(ctx context.Context, url string, keyURL stri
 	return nil
 }
 
-func (storeMap *StoreURLMap) AddBatchURL(ctx context.Context, shortOriginalURL []model.ShortOriginalUrl) error {
+func (storeMap *StoreURLMap) AddBatchURL(ctx context.Context, shortOriginalURL []model.ShortOriginalURL) error {
 	storeMap.mu.Lock()
 	defer storeMap.mu.Unlock()
 	err := storeMap.saveShortURLToFileBatch(shortOriginalURL)
@@ -107,7 +107,7 @@ func (storeMap *StoreURLMap) GetURL(ctx context.Context, keyURL string) (string,
 	return url, exist
 }
 
-func (storeMap *StoreURLMap) saveShortURLToFileBatch(shortOriginalURL []model.ShortOriginalUrl) error {
+func (storeMap *StoreURLMap) saveShortURLToFileBatch(shortOriginalURL []model.ShortOriginalURL) error {
 	storeMap.logger.Info("Write to file storage", zap.String("file", storeMap.cfg.FileStorage))
 	file, err := os.OpenFile(storeMap.cfg.FileStorage, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0666)
 	if err != nil {
@@ -118,7 +118,7 @@ func (storeMap *StoreURLMap) saveShortURLToFileBatch(shortOriginalURL []model.Sh
 			storeMap.logger.Error("Can't close storage file when save it")
 		}
 	}()
-	
+
 	writer := bufio.NewWriter(file)
 
 	for _, soURL := range shortOriginalURL {
@@ -153,7 +153,7 @@ func (storeMap *StoreURLMap) saveShortURLToFile(url string, originalURL string) 
 	if err := writer.Flush(); err != nil {
 		return err
 	}
-	
+
 	return nil
 }
 

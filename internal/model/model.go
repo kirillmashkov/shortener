@@ -1,7 +1,7 @@
 package model
 
 type URLToShortRequest struct {
-	OriginalURL string `json:"url"` 
+	OriginalURL string `json:"url"`
 }
 
 type ShortToURLReponse struct {
@@ -9,16 +9,16 @@ type ShortToURLReponse struct {
 }
 
 type URLToShortBatchRequest struct {
-	CorrelationId string `json:"correlation_id"`
-	OriginalURL string `json:"original_url"`
+	CorrelationID string `json:"correlation_id"`
+	OriginalURL   string `json:"original_url"`
 }
 
 type ShortToURLBatchResponse struct {
-	CorrelationId string `json:"correlation_id"`
-	ShortURL string `json:"short_url"`
+	CorrelationID string `json:"correlation_id"`
+	ShortURL      string `json:"short_url"`
 }
 
-type ShortOriginalUrl struct {
-	Key string
+type ShortOriginalURL struct {
+	Key         string
 	OriginalURL string
 }
