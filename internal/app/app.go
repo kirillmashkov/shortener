@@ -22,12 +22,13 @@ var Log *zap.Logger = zap.NewNop()
 func Initialize() error {
 	var err error
 	
-	config.InitServerConf(&ServerConf, Log)
+	config.InitServerConf(&ServerConf, Log)	
 
 	Database = database.New(&ServerConf)
 	err = Database.Open()
 	if err != nil {
 		Log.Error("Error open connection db", zap.Error(err))
+		Storage, err = memory.New(&ServerConf, Log, &ServerConf)
 		Service = service.New(Storage, ServerConf)
 	} else {
 		Database.CreateScheme()
@@ -35,7 +36,7 @@ func Initialize() error {
 		Service = service.New(RepositoryShortURL, ServerConf)
 	}
 
-	Storage, err = memory.New(&ServerConf, Log, &ServerConf)
+	
 	if err != nil {
 		return err
 	}
