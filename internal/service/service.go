@@ -42,14 +42,14 @@ func (s *Service) ProcessURL(ctx context.Context, originalURL string) (string, e
 	keyURL := s.keyURL()
 	shortURL := s.shortURL(keyURL)
 	if err := s.storage.AddURL(ctx, originalURL, keyURL); err != nil {
-		var errAddUrl *model.DuplicateURLError
-		if errors.As(err, &errAddUrl) {
+		var errAddURL *model.DuplicateURLError
+		if errors.As(err, &errAddURL) {
 			key, errGetShortURL := s.storage.GetShortURL(ctx, originalURL)
 			if errGetShortURL != nil {
 				return "", errors.New("can't get short url")
 			}
 
-			return s.shortURL(key), errAddUrl
+			return s.shortURL(key), errAddURL
 		}
 		return "", err
 	}
