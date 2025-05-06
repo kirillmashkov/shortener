@@ -6,7 +6,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/kirillmashkov/shortener.git/internal/model"
 	"go.uber.org/zap"
 )
@@ -32,6 +34,13 @@ func (r *RepositoryShortURL) AddURL(ctx context.Context, url string, keyURL stri
 
 	err = r.insertShortURL(ctx, tx, keyURL, url)
 	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) {
+			if pgErr.Code == pgerrcode.UniqueViolation {
+				return model.NewDuplicateURLError(err)
+			}
+		}	
+
 		return err
 	}
 
@@ -77,7 +86,8 @@ func (r *RepositoryShortURL) insertShortURL(ctx context.Context, tx pgx.Tx, keyU
 			zap.Error(err))
 
 		if errRollback := tx.Rollback(ctx); errRollback != nil {
-			return errors.Join(err, errRollback)
+			r.log.Error("Error rollback tx")
+			return err
 		}
 
 		return err
@@ -97,4 +107,17 @@ func (r *RepositoryShortURL) GetURL(ctx context.Context, keyURL string) (string,
 	}
 
 	return originalURL, true
+}
+
+func (r *RepositoryShortURL) GetShortURL(ctx context.Context, originalURL string) (string, error) {
+	ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
+	defer cancel()
+
+	var key string
+	err := r.db.conn.QueryRow(ctx, "select short_url from shorturl where original_url = $1", originalURL).Scan(&key)
+	if err != nil {
+		return "", err
+	}
+
+	return key, nil
 }

@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -15,7 +16,7 @@ import (
 
 type ServiceShortURL interface {
 	GetShortURL(ctx context.Context, originalURL *url.URL) (string, bool)
-	ProcessURL(ctx context.Context, originalURL string) (string, bool)
+	ProcessURL(ctx context.Context, originalURL string) (string, error)
 	ProcessURLBatch(ctx context.Context, originalURLs []model.URLToShortBatchRequest) ([]model.ShortToURLBatchResponse, error)
 }
 
@@ -47,15 +48,24 @@ func PostHandler(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-
-	shortURL, result := app.Service.ProcessURL(req.Context(), string(originalURL))
-	if !result {
-		errorString := fmt.Sprintf("Link is bad %s", string(originalURL))
+	shortURL, err := app.Service.ProcessURL(req.Context(), string(originalURL))
+	res.Header().Set("content-type", "text/plain")
+	if err != nil {
+		var errDuplicate *model.DuplicateURLError
+		if errors.As(err, &errDuplicate) {
+			res.WriteHeader(http.StatusConflict)	
+			_, err = res.Write([]byte(shortURL))
+			if err != nil {
+				http.Error(res, "Can't write response", http.StatusBadRequest)
+				return
+			}
+			return
+		}
+		errorString := fmt.Sprintf("Something went wrong when generate short url for %s", string(originalURL))
 		http.Error(res, errorString, http.StatusBadRequest)
 		return
 	}
 
-	res.Header().Set("content-type", "text/plain")
 	res.WriteHeader(http.StatusCreated)
 	_, err = res.Write([]byte(shortURL))
 	if err != nil {
@@ -77,18 +87,30 @@ func PostGenerateShortURL(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	shortURL, result := app.Service.ProcessURL(req.Context(), request.OriginalURL)
-	if !result {
-		errorString := fmt.Sprintf("Link is bad %s", string(request.OriginalURL))
-		http.Error(res, errorString, http.StatusBadRequest)
-		return
-	}
+	shortURL, err := app.Service.ProcessURL(req.Context(), request.OriginalURL)
 
+	res.Header().Set("Content-Type", "application/json")
 	response := model.ShortToURLReponse {
 		ShortURL: shortURL,
 	}
 
-	res.Header().Set("Content-Type", "application/json")
+	if err != nil {
+		var errDuplicate *model.DuplicateURLError
+		if errors.As(err, &errDuplicate) {
+			res.WriteHeader(http.StatusConflict)	
+			encoder := json.NewEncoder(res)
+			if err := encoder.Encode(response); err != nil {
+				app.Log.Debug("error encoding response", zap.Error(err))
+				return
+			}
+			return
+		}
+
+		errorString := fmt.Sprintf("Something went wrong when generate short url for %s", string(request.OriginalURL))
+		http.Error(res, errorString, http.StatusBadRequest)
+		return
+	}
+
 	res.WriteHeader(http.StatusCreated)
 	encoder := json.NewEncoder(res)
     if err := encoder.Encode(response); err != nil {

@@ -107,6 +107,10 @@ func (storeMap *StoreURLMap) GetURL(ctx context.Context, keyURL string) (string,
 	return url, exist
 }
 
+func (storeMap *StoreURLMap) GetShortURL(ctx context.Context, originalURL string) (string, error) {
+	return "", errors.New("unsupport operation")
+}
+
 func (storeMap *StoreURLMap) saveShortURLToFileBatch(shortOriginalURL []model.ShortOriginalURL) error {
 	storeMap.logger.Info("Write to file storage", zap.String("file", storeMap.cfg.FileStorage))
 	file, err := os.OpenFile(storeMap.cfg.FileStorage, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0666)

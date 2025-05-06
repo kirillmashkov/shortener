@@ -46,7 +46,7 @@ func (d *Database) CreateScheme() error {
 	ctx, cancel := context.WithTimeout(context.Background(), 1 * time.Second)
 	defer cancel()
 
-	_, err := d.conn.Exec(ctx, "create table if not exists shorturl (id uuid primary key, short_url varchar NOT NULL, original_url varchar NOT NULL)")
-
+	_, err := d.conn.Exec(ctx, "create table if not exists shorturl (id uuid primary key, short_url varchar NOT NULL, original_url varchar NOT NULL, CONSTRAINT original_url_unique UNIQUE(original_url))")
+	
 	return err
 }

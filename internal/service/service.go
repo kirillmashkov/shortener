@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"math/rand"
 	"net/url"
@@ -14,6 +15,7 @@ type storeURL interface {
 	AddURL(ctx context.Context, url string, keyURL string) error
 	GetURL(ctx context.Context, keyURL string) (string, bool)
 	AddBatchURL(ctx context.Context, shortOriginalURL []model.ShortOriginalURL) error
+	GetShortURL(ctx context.Context, originalURL string) (string, error)
 }
 
 type Service struct {
@@ -36,14 +38,22 @@ func (s *Service) GetShortURL(ctx context.Context, originalURL *url.URL) (string
 	return url, true
 }
 
-func (s *Service) ProcessURL(ctx context.Context, originalURL string) (string, bool) {
+func (s *Service) ProcessURL(ctx context.Context, originalURL string) (string, error) {
 	keyURL := s.keyURL()
 	shortURL := s.shortURL(keyURL)
 	if err := s.storage.AddURL(ctx, originalURL, keyURL); err != nil {
-		return "", false
-	}
-	return shortURL, true
+		var errAddUrl *model.DuplicateURLError
+		if errors.As(err, &errAddUrl) {
+			key, errGetShortURL := s.storage.GetShortURL(ctx, originalURL)
+			if errGetShortURL != nil {
+				return "", errors.New("can't get short url")
+			}
 
+			return s.shortURL(key), errAddUrl
+		}
+		return "", err
+	}
+	return shortURL, nil
 }
 
 func (s *Service) ProcessURLBatch(ctx context.Context, originalURLs []model.URLToShortBatchRequest) ([]model.ShortToURLBatchResponse, error) {
