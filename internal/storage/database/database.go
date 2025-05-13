@@ -5,24 +5,32 @@ import (
 	"errors"
 	"time"
 
+	"github.com/golang-migrate/migrate/v4"
+	_ "github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/jackc/pgx/v5"
 	"github.com/kirillmashkov/shortener.git/internal/config"
+	"go.uber.org/zap"
 )
+
+const migrateDir = "migrations"
+const timeoutPindDB = 1 * time.Second
 
 type Database struct {
 	cfg     *config.ServerConfig
 	conn	*pgx.Conn
+	logger	*zap.Logger
 }
 
-func New(config *config.ServerConfig) *Database {
-	return &Database{cfg: config}
+func New(config *config.ServerConfig, logger *zap.Logger) *Database {
+	return &Database{cfg: config, logger: logger}
 }
 
-func (d *Database) Ping() error {
+func (d *Database) Ping(ctx context.Context) error {
 	if d.conn == nil {
 		return errors.New("no connection to db")
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 1 * time.Second)
+	ctx, cancel := context.WithTimeout(ctx, timeoutPindDB)
 	defer cancel()
 
 	return d.conn.Ping(ctx)
@@ -38,15 +46,20 @@ func (d *Database) Close() error {
 	return d.conn.Close(context.Background())
 }
 
-func (d *Database) CreateScheme() error {
-	if d.conn == nil {
-		return errors.New("no connection to db")
+func (d *Database) Migrate() error {
+	m, err := migrate.New("file://" + migrateDir, d.cfg.Connection)
+	if err != nil {
+		d.logger.Error("Can't initialize migrations", zap.Error(err))
+		return err
 	}
-	
-	ctx, cancel := context.WithTimeout(context.Background(), 1 * time.Second)
-	defer cancel()
 
-	_, err := d.conn.Exec(ctx, "create table if not exists shorturl (id uuid primary key, short_url varchar NOT NULL, original_url varchar NOT NULL, CONSTRAINT original_url_unique UNIQUE(original_url))")
-	
-	return err
+	if err := m.Up(); err != nil {
+		if errors.Is(err, migrate.ErrNoChange) {
+			d.logger.Info("No migrations need")
+			return nil
+		}
+		d.logger.Error("Something went wrong while migrations", zap.Error(err))
+		return err
+	}
+	return nil
 }

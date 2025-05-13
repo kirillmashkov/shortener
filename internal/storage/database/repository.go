@@ -18,12 +18,14 @@ type RepositoryShortURL struct {
 	log *zap.Logger
 }
 
+const timeoutOperationDB = 1 * time.Second
+
 func NewRepositoryShortURL(db *Database, log *zap.Logger) *RepositoryShortURL {
 	return &RepositoryShortURL{db: db, log: log}
 }
 
 func (r *RepositoryShortURL) AddURL(ctx context.Context, url string, keyURL string) error {
-	ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, timeoutOperationDB)
 	defer cancel()
 
 	tx, err := r.db.conn.Begin(ctx)
@@ -31,6 +33,17 @@ func (r *RepositoryShortURL) AddURL(ctx context.Context, url string, keyURL stri
 		r.log.Error("Error open tran", zap.Error(err))
 		return err
 	}
+	defer func() {
+		if err == nil {
+			if errCommit := tx.Commit(ctx); errCommit != nil {
+				r.log.Error("Error commit tran", zap.Error(err))		
+			}
+		} else {
+			if errRollback := tx.Rollback(ctx); errRollback != nil {
+				r.log.Error("Error rollback tx", zap.Error(errRollback))	
+			}
+		}
+	}()
 
 	err = r.insertShortURL(ctx, tx, keyURL, url)
 	if err != nil {
@@ -44,16 +57,11 @@ func (r *RepositoryShortURL) AddURL(ctx context.Context, url string, keyURL stri
 		return err
 	}
 
-	err = tx.Commit(ctx)
-	if err != nil {
-		r.log.Error("Error commit tran", zap.Error(err))
-	}
-
 	return nil
 }
 
 func (r *RepositoryShortURL) AddBatchURL(ctx context.Context, shortOriginalURL []model.ShortOriginalURL) error {
-	ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, timeoutOperationDB)
 	defer cancel()
 
 	tx, err := r.db.conn.Begin(ctx)
@@ -61,17 +69,23 @@ func (r *RepositoryShortURL) AddBatchURL(ctx context.Context, shortOriginalURL [
 		r.log.Error("Error open tran", zap.Error(err))
 		return err
 	}
+	defer func() {
+		if err == nil {
+			if errCommit := tx.Commit(ctx); errCommit != nil {
+				r.log.Error("Error commit tran", zap.Error(err))		
+			}
+		} else {
+			if errRollback := tx.Rollback(ctx); errRollback != nil {
+				r.log.Error("Error rollback tx", zap.Error(errRollback))	
+			}
+		}
+	}()
 
 	for _, soURL := range shortOriginalURL {
 		err = r.insertShortURL(ctx, tx, soURL.Key, soURL.OriginalURL)
 		if err != nil {
 			return err
 		}
-	}
-
-	err = tx.Commit(ctx)
-	if err != nil {
-		r.log.Error("Error commit tran", zap.Error(err))
 	}
 
 	return nil
@@ -84,12 +98,6 @@ func (r *RepositoryShortURL) insertShortURL(ctx context.Context, tx pgx.Tx, keyU
 			zap.String("key", keyURL),
 			zap.String("original url", url),
 			zap.Error(err))
-
-		if errRollback := tx.Rollback(ctx); errRollback != nil {
-			r.log.Error("Error rollback tx")
-			return err
-		}
-
 		return err
 	}
 
@@ -103,6 +111,7 @@ func (r *RepositoryShortURL) GetURL(ctx context.Context, keyURL string) (string,
 	var originalURL string
 	err := r.db.conn.QueryRow(ctx, "select original_url from shorturl where short_url = $1", keyURL).Scan(&originalURL)
 	if err != nil {
+		r.log.Error("Error get originalUrl from db", zap.String("shortUrl", keyURL), zap.Error(err))
 		return "", false
 	}
 
@@ -110,7 +119,7 @@ func (r *RepositoryShortURL) GetURL(ctx context.Context, keyURL string) (string,
 }
 
 func (r *RepositoryShortURL) GetShortURL(ctx context.Context, originalURL string) (string, error) {
-	ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, timeoutOperationDB)
 	defer cancel()
 
 	var key string

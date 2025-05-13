@@ -126,7 +126,10 @@ func (storeMap *StoreURLMap) saveShortURLToFileBatch(shortOriginalURL []model.Sh
 	writer := bufio.NewWriter(file)
 
 	for _, soURL := range shortOriginalURL {
-		storeMap.writeToFile(soURL.Key, soURL.OriginalURL, writer)
+		err = storeMap.writeToFile(soURL.Key, soURL.OriginalURL, writer)
+		if err != nil {
+			return err
+		}
 	}
 
 	if err := writer.Flush(); err != nil {

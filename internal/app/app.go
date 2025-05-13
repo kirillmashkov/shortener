@@ -24,21 +24,22 @@ func Initialize() error {
 	
 	config.InitServerConf(&ServerConf, Log)	
 
-	Database = database.New(&ServerConf)
+	Database = database.New(&ServerConf, Log)
 	err = Database.Open()
 	if err != nil {
 		Log.Error("Error open connection db", zap.Error(err))
 		Storage, err = memory.New(&ServerConf, Log, &ServerConf)
+		if err != nil {
+			return nil
+		}
 		Service = service.New(Storage, ServerConf)
 	} else {
-		Database.CreateScheme()
+		if err := Database.Migrate(); err != nil {
+			return err
+		}
+		// Database.CreateScheme()
 		RepositoryShortURL = database.NewRepositoryShortURL(Database, Log)
 		Service = service.New(RepositoryShortURL, ServerConf)
-	}
-
-	
-	if err != nil {
-		return err
 	}
 
 	ServiceUtils = service.NewServiceUtils(Database, Log)

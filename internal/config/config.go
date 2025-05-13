@@ -20,7 +20,7 @@ func init() {
 	flag.StringVar(&ServerArg.Host, "a", "localhost:8080", "server host")
 	flag.StringVar(&ServerArg.Redirect, "b", "http://localhost:8080", "server redirect")
 	flag.StringVar(&ServerArg.FileStorage, "f", "short_url_storage.txt", "file storage short url")
-	flag.StringVar(&ServerArg.Connection, "d", "postgres://postgres:postgres@localhost:5432/postgres", "db connection string")
+	flag.StringVar(&ServerArg.Connection, "d", "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable", "db connection string")
 }
 
 func InitServerConf(conf *ServerConfig, logger *zap.Logger) {

@@ -106,7 +106,7 @@ func PostGenerateShortURL(res http.ResponseWriter, req *http.Request) {
 			return
 		}
 
-		errorString := fmt.Sprintf("Something went wrong when generate short url for %s", string(request.OriginalURL))
+		errorString := fmt.Sprintf("Something went wrong when generate short url for %s", request.OriginalURL)
 		http.Error(res, errorString, http.StatusBadRequest)
 		return
 	}
@@ -153,7 +153,7 @@ func Ping(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	err := app.ServiceUtils.PingDB()
+	err := app.ServiceUtils.PingDB(req.Context())
 	if err != nil {
 		http.Error(res, "DB is unavailable", http.StatusInternalServerError)
 		return

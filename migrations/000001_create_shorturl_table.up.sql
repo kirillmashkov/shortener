@@ -1,0 +1,1 @@
+create table if not exists shorturl (id uuid primary key, short_url varchar NOT NULL, original_url varchar NOT NULL, CONSTRAINT original_url_unique UNIQUE(original_url));
