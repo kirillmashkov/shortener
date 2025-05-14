@@ -25,6 +25,8 @@ func main() {
 		panic(err)
 	}
 
+	defer app.Close()
+
 	err = http.ListenAndServe(app.ServerConf.Host, router.Serv())
 	if err != nil {
 		panic(err)

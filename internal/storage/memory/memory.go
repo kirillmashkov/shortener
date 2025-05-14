@@ -1,7 +1,8 @@
-package storage
+package memory
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"errors"
 	"os"
@@ -9,14 +10,15 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/kirillmashkov/shortener.git/internal/config"
+	"github.com/kirillmashkov/shortener.git/internal/model"
 	"go.uber.org/zap"
 )
 
 type StoreURLMap struct {
-	mu sync.RWMutex
-	urls map[string]string
+	mu     sync.RWMutex
+	urls   map[string]string
 	logger *zap.Logger
-	cfg *config.ServerConfig
+	cfg    *config.ServerConfig
 }
 
 type StoreFile struct {
@@ -49,26 +51,26 @@ func New(conf *config.ServerConfig, logger *zap.Logger, config *config.ServerCon
 			return nil, err
 		}
 
-		logger.Info("Read short ulr", 
+		logger.Info("Read short ulr",
 			zap.String("shortURL", shortURL.ShortURL),
 			zap.String("OriginalURL", shortURL.OriginalURL),
 			zap.String("id", shortURL.UUID))
 		urls[shortURL.ShortURL] = shortURL.OriginalURL
-		
+
 	}
 
 	if err := scanner.Err(); err != nil {
 		logger.Error("Error read file", zap.Error(err))
 	}
-	
+
 	return &StoreURLMap{
-			urls: urls,
-			logger: logger,
-			cfg: config,
-		}, nil
+		urls:   urls,
+		logger: logger,
+		cfg:    config,
+	}, nil
 }
 
-func (storeMap *StoreURLMap) AddURL(url string, keyURL string) error {
+func (storeMap *StoreURLMap) AddURL(ctx context.Context, url string, keyURL string) error {
 	storeMap.mu.Lock()
 	defer storeMap.mu.Unlock()
 
@@ -82,11 +84,59 @@ func (storeMap *StoreURLMap) AddURL(url string, keyURL string) error {
 	return nil
 }
 
-func (storeMap *StoreURLMap) GetURL(keyURL string) (string, bool) {
+func (storeMap *StoreURLMap) AddBatchURL(ctx context.Context, shortOriginalURL []model.ShortOriginalURL) error {
+	storeMap.mu.Lock()
+	defer storeMap.mu.Unlock()
+	err := storeMap.saveShortURLToFileBatch(shortOriginalURL)
+	if err != nil {
+		storeMap.logger.Error("Can't save links into file")
+		return err
+	}
+
+	for _, soURL := range shortOriginalURL {
+		storeMap.urls[soURL.Key] = soURL.OriginalURL
+	}
+
+	return nil
+}
+
+func (storeMap *StoreURLMap) GetURL(ctx context.Context, keyURL string) (string, bool) {
 	storeMap.mu.RLock()
 	url, exist := storeMap.urls[keyURL]
 	storeMap.mu.RUnlock()
 	return url, exist
+}
+
+func (storeMap *StoreURLMap) GetShortURL(ctx context.Context, originalURL string) (string, error) {
+	return "", errors.New("unsupport operation")
+}
+
+func (storeMap *StoreURLMap) saveShortURLToFileBatch(shortOriginalURL []model.ShortOriginalURL) error {
+	storeMap.logger.Info("Write to file storage", zap.String("file", storeMap.cfg.FileStorage))
+	file, err := os.OpenFile(storeMap.cfg.FileStorage, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0666)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		if errClose := file.Close(); errClose != nil {
+			storeMap.logger.Error("Can't close storage file when save it")
+		}
+	}()
+
+	writer := bufio.NewWriter(file)
+
+	for _, soURL := range shortOriginalURL {
+		err = storeMap.writeToFile(soURL.Key, soURL.OriginalURL, writer)
+		if err != nil {
+			return err
+		}
+	}
+
+	if err := writer.Flush(); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (storeMap *StoreURLMap) saveShortURLToFile(url string, originalURL string) error {
@@ -101,13 +151,25 @@ func (storeMap *StoreURLMap) saveShortURLToFile(url string, originalURL string) 
 		}
 	}()
 
-	shortURLToFile := StoreFile{
-		UUID:        uuid.NewString(),
-		ShortURL:    url,
-		OriginalURL: originalURL,
+	writer := bufio.NewWriter(file)
+
+	if err := storeMap.writeToFile(url, originalURL, writer); err != nil {
+		return err
 	}
 
-	writer := bufio.NewWriter(file)
+	if err := writer.Flush(); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (storeMap *StoreURLMap) writeToFile(shortURL string, originalURL string, writer *bufio.Writer) error {
+	shortURLToFile := StoreFile{
+		UUID:        uuid.NewString(),
+		ShortURL:    shortURL,
+		OriginalURL: originalURL,
+	}
 
 	storeMap.logger.Info("Write short url", zap.Any("short url", shortURLToFile))
 	data, err := json.Marshal(shortURLToFile)
@@ -123,9 +185,5 @@ func (storeMap *StoreURLMap) saveShortURLToFile(url string, originalURL string) 
 		return err
 	}
 
-	if err := writer.Flush(); err != nil {
-		return err
-	}
-	
 	return nil
 }
