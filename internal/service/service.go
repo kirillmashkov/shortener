@@ -14,6 +14,7 @@ import (
 type storeURL interface {
 	AddURL(ctx context.Context, url string, keyURL string) error
 	GetURL(ctx context.Context, keyURL string) (string, bool)
+	GetAllURL(ctx context.Context) ([]model.ShortOriginalURL, error)
 	AddBatchURL(ctx context.Context, shortOriginalURL []model.ShortOriginalURL) error
 	GetShortURL(ctx context.Context, originalURL string) (string, error)
 }
@@ -36,6 +37,10 @@ func (s *Service) GetShortURL(ctx context.Context, originalURL *url.URL) (string
 	}
 
 	return url, true
+}
+
+func (s *Service) GetAllURL(ctx context.Context) ([]model.ShortOriginalURL, error) {
+	return s.storage.GetAllURL(ctx)
 }
 
 func (s *Service) ProcessURL(ctx context.Context, originalURL string) (string, error) {

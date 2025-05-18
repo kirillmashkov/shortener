@@ -19,6 +19,6 @@ type ShortToURLBatchResponse struct {
 }
 
 type ShortOriginalURL struct {
-	Key         string
-	OriginalURL string
+	Key         string `json:"short_url"`
+	OriginalURL string `json:"original_url"`
 }

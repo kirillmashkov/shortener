@@ -107,6 +107,17 @@ func (storeMap *StoreURLMap) GetURL(ctx context.Context, keyURL string) (string,
 	return url, exist
 }
 
+func (storeMap *StoreURLMap) GetAllURL(ctx context.Context) ([]model.ShortOriginalURL, error) {
+	storeMap.mu.Lock()
+	defer storeMap.mu.Unlock()
+
+	res := make([]model.ShortOriginalURL, 0, len(storeMap.urls))
+	for k, v := range storeMap.urls {
+		res = append(res, model.ShortOriginalURL{Key: k, OriginalURL: v})
+	}
+	return res, nil
+}
+
 func (storeMap *StoreURLMap) GetShortURL(ctx context.Context, originalURL string) (string, error) {
 	return "", errors.New("unsupport operation")
 }

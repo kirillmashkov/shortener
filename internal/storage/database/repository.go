@@ -130,3 +130,18 @@ func (r *RepositoryShortURL) GetShortURL(ctx context.Context, originalURL string
 
 	return key, nil
 }
+
+func (r *RepositoryShortURL) GetAllURL(ctx context.Context) ([]model.ShortOriginalURL, error) {
+	ctx, cancel := context.WithTimeout(ctx, timeoutOperationDB)
+	defer cancel()
+
+	rows, err := r.db.conn.Query(ctx, "select short_url, original_url from shorturl")
+	if err != nil {
+		r.log.Error("Error get all urls from db")
+		return nil, err
+	}
+
+	defer rows.Close()
+	
+	return pgx.CollectRows(rows, pgx.RowToStructByPos[model.ShortOriginalURL])
+}
