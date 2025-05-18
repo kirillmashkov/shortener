@@ -45,15 +45,29 @@ func GetAllURL(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	// cookie, err := req.Cookie("token")
+	// if err != nil {
+	// 	cookie = nil
+	// }
+
+	// if !security.CheckJWT(cookie) {
+	// 	http.Error(res, "No JWT", http.StatusUnauthorized)
+	// 	return
+	// }
+
 	cookie, err := req.Cookie("token")
 	if err != nil {
 		cookie = nil
 	}
 
-	if !security.CheckJWT(cookie) {
-		http.Error(res, "No JWT", http.StatusUnauthorized)
+	jwtToken, err := security.GetJWT(cookie)
+	if err != nil {
+		app.Log.Error("Error get token", zap.Error(err))
+		http.Error(res, "Something went wrong", http.StatusBadRequest)
 		return
 	}
+	resCookie := http.Cookie{Name: "token", Value: jwtToken}
+	http.SetCookie(res, &resCookie)
 
 	result, err := app.Service.GetAllURL(req.Context())
 	if err != nil {
@@ -80,6 +94,7 @@ func PostHandler(res http.ResponseWriter, req *http.Request) {
 		http.Error(res, "Only POST requests are allowed!", http.StatusBadRequest)
 		return
 	}
+
 	cookie, err := req.Cookie("token")
 	if err != nil {
 		cookie = nil
