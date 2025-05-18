@@ -56,6 +56,7 @@ func (d *Database) Migrate() error {
 	if err := m.Up(); err != nil {
 		if errors.Is(err, migrate.ErrNoChange) {
 			d.logger.Info("No migrations need")
+			d.conn.Query(context.Background(), "delete from shorturl")
 			return nil
 		}
 		d.logger.Error("Something went wrong while migrations", zap.Error(err))

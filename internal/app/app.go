@@ -37,7 +37,6 @@ func Initialize() error {
 		if err := Database.Migrate(); err != nil {
 			return err
 		}
-		// Database.CreateScheme()
 		RepositoryShortURL = database.NewRepositoryShortURL(Database, Log)
 		Service = service.New(RepositoryShortURL, ServerConf)
 	}
