@@ -143,5 +143,10 @@ func (r *RepositoryShortURL) GetAllURL(ctx context.Context) ([]model.KeyOriginal
 
 	defer rows.Close()
 
-	return pgx.CollectRows(rows, pgx.RowToStructByPos[model.KeyOriginalURL])
+	res, err := pgx.CollectRows(rows, pgx.RowToStructByPos[model.KeyOriginalURL])
+	for _, j := range res {
+		r.log.Info("Row", zap.String("key", j.Key), zap.String("original", j.OriginalURL))
+	}
+
+	return res, err
 }
