@@ -21,6 +21,10 @@ const tokenExp = time.Hour * 3
 const secretKey = "supersecretkey"
 
 func GetJWT(cookie *http.Cookie) (string, error) {
+	if cookie == nil {
+		return buildJWTString()	
+	}
+
 	checkJWT := CheckJWT(cookie)
 
 	if checkJWT {
