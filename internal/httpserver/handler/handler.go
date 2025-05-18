@@ -20,7 +20,7 @@ type ServiceShortURL interface {
 	GetShortURL(ctx context.Context, originalURL *url.URL) (string, bool)
 	ProcessURL(ctx context.Context, originalURL string) (string, error)
 	ProcessURLBatch(ctx context.Context, originalURLs []model.URLToShortBatchRequest) ([]model.ShortToURLBatchResponse, error)
-	GetAllURL(ctx context.Context) ([]model.ShortOriginalURL, error)
+	GetAllURL(ctx context.Context) ([]model.KeyOriginalURL, error)
 }
 
 func GetHandler(res http.ResponseWriter, req *http.Request) {
@@ -52,7 +52,7 @@ func GetAllURL(res http.ResponseWriter, req *http.Request) {
 
 	if !security.CheckJWT(cookie) {
 		http.Error(res, "No JWT", http.StatusUnauthorized)
-		return		
+		return
 	}
 
 	result, err := app.Service.GetAllURL(req.Context())

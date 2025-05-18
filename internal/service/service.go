@@ -14,8 +14,8 @@ import (
 type storeURL interface {
 	AddURL(ctx context.Context, url string, keyURL string) error
 	GetURL(ctx context.Context, keyURL string) (string, bool)
-	GetAllURL(ctx context.Context) ([]model.ShortOriginalURL, error)
-	AddBatchURL(ctx context.Context, shortOriginalURL []model.ShortOriginalURL) error
+	GetAllURL(ctx context.Context) ([]model.KeyOriginalURL, error)
+	AddBatchURL(ctx context.Context, shortOriginalURL []model.KeyOriginalURL) error
 	GetShortURL(ctx context.Context, originalURL string) (string, error)
 }
 
@@ -40,7 +40,17 @@ func (s *Service) GetShortURL(ctx context.Context, originalURL *url.URL) (string
 }
 
 func (s *Service) GetAllURL(ctx context.Context) ([]model.ShortOriginalURL, error) {
-	return s.storage.GetAllURL(ctx)
+	keyShortURL, err := s.storage.GetAllURL(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	result := make([]model.ShortOriginalURL, 0, len(keyShortURL))
+	for _, j := range keyShortURL {
+		result = append(result, model.ShortOriginalURL{Short: s.shortURL(j.Key), OriginalURL: j.OriginalURL})
+	}
+
+	return result, nil
 }
 
 func (s *Service) ProcessURL(ctx context.Context, originalURL string) (string, error) {
@@ -62,13 +72,13 @@ func (s *Service) ProcessURL(ctx context.Context, originalURL string) (string, e
 }
 
 func (s *Service) ProcessURLBatch(ctx context.Context, originalURLs []model.URLToShortBatchRequest) ([]model.ShortToURLBatchResponse, error) {
-	var soURLs []model.ShortOriginalURL
+	var soURLs []model.KeyOriginalURL
 	var results []model.ShortToURLBatchResponse
 
 	for _, originalURL := range originalURLs {
 		keyURL := s.keyURL()
 		shortURL := s.shortURL(keyURL)
-		soURLs = append(soURLs, model.ShortOriginalURL{Key: keyURL, OriginalURL: originalURL.OriginalURL})
+		soURLs = append(soURLs, model.KeyOriginalURL{Key: keyURL, OriginalURL: originalURL.OriginalURL})
 		results = append(results, model.ShortToURLBatchResponse{CorrelationID: originalURL.CorrelationID, ShortURL: shortURL})
 	}
 

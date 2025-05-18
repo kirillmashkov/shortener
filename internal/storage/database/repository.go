@@ -36,11 +36,11 @@ func (r *RepositoryShortURL) AddURL(ctx context.Context, url string, keyURL stri
 	defer func() {
 		if err == nil {
 			if errCommit := tx.Commit(ctx); errCommit != nil {
-				r.log.Error("Error commit tran", zap.Error(err))		
+				r.log.Error("Error commit tran", zap.Error(err))
 			}
 		} else {
 			if errRollback := tx.Rollback(ctx); errRollback != nil {
-				r.log.Error("Error rollback tx", zap.Error(errRollback))	
+				r.log.Error("Error rollback tx", zap.Error(errRollback))
 			}
 		}
 	}()
@@ -52,7 +52,7 @@ func (r *RepositoryShortURL) AddURL(ctx context.Context, url string, keyURL stri
 			if pgErr.Code == pgerrcode.UniqueViolation {
 				return model.NewDuplicateURLError(err)
 			}
-		}	
+		}
 
 		return err
 	}
@@ -60,7 +60,7 @@ func (r *RepositoryShortURL) AddURL(ctx context.Context, url string, keyURL stri
 	return nil
 }
 
-func (r *RepositoryShortURL) AddBatchURL(ctx context.Context, shortOriginalURL []model.ShortOriginalURL) error {
+func (r *RepositoryShortURL) AddBatchURL(ctx context.Context, shortOriginalURL []model.KeyOriginalURL) error {
 	ctx, cancel := context.WithTimeout(ctx, timeoutOperationDB)
 	defer cancel()
 
@@ -72,11 +72,11 @@ func (r *RepositoryShortURL) AddBatchURL(ctx context.Context, shortOriginalURL [
 	defer func() {
 		if err == nil {
 			if errCommit := tx.Commit(ctx); errCommit != nil {
-				r.log.Error("Error commit tran", zap.Error(err))		
+				r.log.Error("Error commit tran", zap.Error(err))
 			}
 		} else {
 			if errRollback := tx.Rollback(ctx); errRollback != nil {
-				r.log.Error("Error rollback tx", zap.Error(errRollback))	
+				r.log.Error("Error rollback tx", zap.Error(errRollback))
 			}
 		}
 	}()
@@ -131,7 +131,7 @@ func (r *RepositoryShortURL) GetShortURL(ctx context.Context, originalURL string
 	return key, nil
 }
 
-func (r *RepositoryShortURL) GetAllURL(ctx context.Context) ([]model.ShortOriginalURL, error) {
+func (r *RepositoryShortURL) GetAllURL(ctx context.Context) ([]model.KeyOriginalURL, error) {
 	ctx, cancel := context.WithTimeout(ctx, timeoutOperationDB)
 	defer cancel()
 
@@ -142,6 +142,6 @@ func (r *RepositoryShortURL) GetAllURL(ctx context.Context) ([]model.ShortOrigin
 	}
 
 	defer rows.Close()
-	
-	return pgx.CollectRows(rows, pgx.RowToStructByPos[model.ShortOriginalURL])
+
+	return pgx.CollectRows(rows, pgx.RowToStructByPos[model.KeyOriginalURL])
 }
