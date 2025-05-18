@@ -50,7 +50,7 @@ func buildJWTString() (string, error) {
 func CheckJWT(cookie *http.Cookie) bool {
 	if cookie == nil {
 		app.Log.Warn("Token is empty")
-		return false
+		return true
 	}
 
 	claims := &Claims{UserID: -1}
