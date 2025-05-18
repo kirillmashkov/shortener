@@ -17,8 +17,8 @@ type Claims struct {
 	UserID int
 }
 
-const TOKEN_EXP = time.Hour * 3
-const SECRET_KEY = "supersecretkey"
+const tokenExp = time.Hour * 3
+const secretKey = "supersecretkey"
 
 func GetJWT(cookie *http.Cookie) (string, error) {
 	checkJWT := CheckJWT(cookie)
@@ -28,54 +28,18 @@ func GetJWT(cookie *http.Cookie) (string, error) {
 	}
 
 	return buildJWTString()
-
-	// if cookie == nil {
-	// 	return buildJWTString()
-	// }
-
-	// claims := &Claims{}
-	// token, err := jwt.ParseWithClaims(cookie.Value, claims,
-	// 	func(t *jwt.Token) (interface{}, error) {
-	// 		if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
-	// 			return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
-	// 		}
-	// 		return []byte(SECRET_KEY), nil
-	// 	})
-
-	// if err != nil {
-	// 	app.Log.Warn("Error parse token, create new UserID")
-	// 	token, err := buildJWTString()
-	// 	if err != nil {
-	// 		app.Log.Error("Error build token", zap.Error(err))
-	// 		return "", err
-	// 	}
-	// 	return token, nil
-	// }
-
-	// if !token.Valid {
-	// 	app.Log.Warn("Token is not valid")
-	// 	token, err := buildJWTString()
-	// 	if err != nil {
-	// 		app.Log.Error("Error build token", zap.Error(err))
-	// 		return "", err
-	// 	}
-	// 	return token, nil
-	// }
-
-	// app.Log.Info("Token is valid", zap.Int("UserID", claims.UserID))
-	// return cookie.Value, nil
 }
 
 func buildJWTString() (string, error) {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, Claims{
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(TOKEN_EXP)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(tokenExp)),
 		},
 		UserID: r.Int(),
 	})
 
-	tokenString, err := token.SignedString([]byte(SECRET_KEY))
+	tokenString, err := token.SignedString([]byte(secretKey))
 	if err != nil {
 		return "", err
 	}
@@ -95,7 +59,7 @@ func CheckJWT(cookie *http.Cookie) bool {
 			if _, ok := t.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, fmt.Errorf("unexpected signing method: %v", t.Header["alg"])
 			}
-			return []byte(SECRET_KEY), nil
+			return []byte(secretKey), nil
 		})
 
 	if err != nil {		
