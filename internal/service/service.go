@@ -12,10 +12,10 @@ import (
 )
 
 type storeURL interface {
-	AddURL(ctx context.Context, url string, keyURL string) error
+	AddURL(ctx context.Context, url string, keyURL string, userID int) error
 	GetURL(ctx context.Context, keyURL string) (string, bool)
-	GetAllURL(ctx context.Context) ([]model.KeyOriginalURL, error)
-	AddBatchURL(ctx context.Context, shortOriginalURL []model.KeyOriginalURL) error
+	GetAllURL(ctx context.Context, userID int) ([]model.KeyOriginalURL, error)
+	AddBatchURL(ctx context.Context, shortOriginalURL []model.KeyOriginalURL, userID int) error
 	GetShortURL(ctx context.Context, originalURL string) (string, error)
 }
 
@@ -39,8 +39,8 @@ func (s *Service) GetShortURL(ctx context.Context, originalURL *url.URL) (string
 	return url, true
 }
 
-func (s *Service) GetAllURL(ctx context.Context) ([]model.ShortOriginalURL, error) {
-	keyShortURL, err := s.storage.GetAllURL(ctx)
+func (s *Service) GetAllURL(ctx context.Context, userID int) ([]model.ShortOriginalURL, error) {
+	keyShortURL, err := s.storage.GetAllURL(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -53,10 +53,10 @@ func (s *Service) GetAllURL(ctx context.Context) ([]model.ShortOriginalURL, erro
 	return result, nil
 }
 
-func (s *Service) ProcessURL(ctx context.Context, originalURL string) (string, error) {
+func (s *Service) ProcessURL(ctx context.Context, originalURL string, userID int) (string, error) {
 	keyURL := s.keyURL()
 	shortURL := s.shortURL(keyURL)
-	if err := s.storage.AddURL(ctx, originalURL, keyURL); err != nil {
+	if err := s.storage.AddURL(ctx, originalURL, keyURL, userID); err != nil {
 		var errAddURL *model.DuplicateURLError
 		if errors.As(err, &errAddURL) {
 			key, errGetShortURL := s.storage.GetShortURL(ctx, originalURL)
@@ -71,7 +71,7 @@ func (s *Service) ProcessURL(ctx context.Context, originalURL string) (string, e
 	return shortURL, nil
 }
 
-func (s *Service) ProcessURLBatch(ctx context.Context, originalURLs []model.URLToShortBatchRequest) ([]model.ShortToURLBatchResponse, error) {
+func (s *Service) ProcessURLBatch(ctx context.Context, originalURLs []model.URLToShortBatchRequest, userID int) ([]model.ShortToURLBatchResponse, error) {
 	var soURLs []model.KeyOriginalURL
 	var results []model.ShortToURLBatchResponse
 
@@ -82,7 +82,7 @@ func (s *Service) ProcessURLBatch(ctx context.Context, originalURLs []model.URLT
 		results = append(results, model.ShortToURLBatchResponse{CorrelationID: originalURL.CorrelationID, ShortURL: shortURL})
 	}
 
-	err := s.storage.AddBatchURL(ctx, soURLs)
+	err := s.storage.AddBatchURL(ctx, soURLs, userID)
 	if err != nil {
 		return nil, err
 	}

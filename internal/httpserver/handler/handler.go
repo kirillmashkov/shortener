@@ -18,9 +18,9 @@ import (
 
 type ServiceShortURL interface {
 	GetShortURL(ctx context.Context, originalURL *url.URL) (string, bool)
-	ProcessURL(ctx context.Context, originalURL string) (string, error)
-	ProcessURLBatch(ctx context.Context, originalURLs []model.URLToShortBatchRequest) ([]model.ShortToURLBatchResponse, error)
-	GetAllURL(ctx context.Context) ([]model.KeyOriginalURL, error)
+	ProcessURL(ctx context.Context, originalURL string, userID int) (string, error)
+	ProcessURLBatch(ctx context.Context, originalURLs []model.URLToShortBatchRequest, userID int) ([]model.ShortToURLBatchResponse, error)
+	GetAllURL(ctx context.Context, userID int) ([]model.KeyOriginalURL, error)
 }
 
 func GetHandler(res http.ResponseWriter, req *http.Request) {
@@ -45,22 +45,12 @@ func GetAllURL(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	// cookie, err := req.Cookie("token")
-	// if err != nil {
-	// 	cookie = nil
-	// }
-
-	// if !security.CheckJWT(cookie) {
-	// 	http.Error(res, "No JWT", http.StatusUnauthorized)
-	// 	return
-	// }
-
 	cookie, err := req.Cookie("token")
 	if err != nil {
 		cookie = nil
 	}
 
-	jwtToken, err := security.GetJWT(cookie)
+	jwtToken, userID, err := security.GetJWT(cookie)
 	if err != nil {
 		app.Log.Error("Error get token", zap.Error(err))
 		http.Error(res, "Something went wrong", http.StatusBadRequest)
@@ -69,7 +59,7 @@ func GetAllURL(res http.ResponseWriter, req *http.Request) {
 	resCookie := http.Cookie{Name: "token", Value: jwtToken}
 	http.SetCookie(res, &resCookie)
 
-	result, err := app.Service.GetAllURL(req.Context())
+	result, err := app.Service.GetAllURL(req.Context(), userID)
 	if err != nil {
 		http.Error(res, "Something went wrong", http.StatusBadRequest)
 		return
@@ -100,7 +90,7 @@ func PostHandler(res http.ResponseWriter, req *http.Request) {
 		cookie = nil
 	}
 
-	jwtToken, err := security.GetJWT(cookie)
+	jwtToken, userID, err := security.GetJWT(cookie)
 	if err != nil {
 		app.Log.Error("Error get token", zap.Error(err))
 		http.Error(res, "Something went wrong", http.StatusBadRequest)
@@ -115,7 +105,7 @@ func PostHandler(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	shortURL, err := app.Service.ProcessURL(req.Context(), string(originalURL))
+	shortURL, err := app.Service.ProcessURL(req.Context(), string(originalURL), userID)
 	res.Header().Set("content-type", "text/plain")
 	if err != nil {
 		var errDuplicate *model.DuplicateURLError
@@ -146,6 +136,21 @@ func PostGenerateShortURL(res http.ResponseWriter, req *http.Request) {
 		http.Error(res, "Only POST requests are allowed!", http.StatusBadRequest)
 		return
 	}
+
+	cookie, err := req.Cookie("token")
+	if err != nil {
+		cookie = nil
+	}
+
+	jwtToken, userID, err := security.GetJWT(cookie)
+	if err != nil {
+		app.Log.Error("Error get token", zap.Error(err))
+		http.Error(res, "Something went wrong", http.StatusBadRequest)
+		return
+	}
+	resCookie := http.Cookie{Name: "token", Value: jwtToken}
+	http.SetCookie(res, &resCookie)
+
 	var request model.URLToShortRequest
 	decoder := json.NewDecoder(req.Body)
 	if err := decoder.Decode(&request); err != nil {
@@ -154,7 +159,7 @@ func PostGenerateShortURL(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	shortURL, err := app.Service.ProcessURL(req.Context(), request.OriginalURL)
+	shortURL, err := app.Service.ProcessURL(req.Context(), request.OriginalURL, userID)
 
 	res.Header().Set("Content-Type", "application/json")
 	response := model.ShortToURLReponse{
@@ -192,6 +197,20 @@ func PostGenerateShortURLBatch(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
+	cookie, err := req.Cookie("token")
+	if err != nil {
+		cookie = nil
+	}
+
+	jwtToken, userID, err := security.GetJWT(cookie)
+	if err != nil {
+		app.Log.Error("Error get token", zap.Error(err))
+		http.Error(res, "Something went wrong", http.StatusBadRequest)
+		return
+	}
+	resCookie := http.Cookie{Name: "token", Value: jwtToken}
+	http.SetCookie(res, &resCookie)
+
 	var request []model.URLToShortBatchRequest
 	decoder := json.NewDecoder(req.Body)
 	if err := decoder.Decode(&request); err != nil {
@@ -200,7 +219,7 @@ func PostGenerateShortURLBatch(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	response, err := app.Service.ProcessURLBatch(req.Context(), request)
+	response, err := app.Service.ProcessURLBatch(req.Context(), request, userID)
 	if err != nil {
 		http.Error(res, "Can't store url batch", http.StatusBadRequest)
 		return

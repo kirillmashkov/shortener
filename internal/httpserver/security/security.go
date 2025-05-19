@@ -20,41 +20,42 @@ type Claims struct {
 const tokenExp = time.Hour * 3
 const secretKey = "supersecretkey"
 
-func GetJWT(cookie *http.Cookie) (string, error) {
+func GetJWT(cookie *http.Cookie) (string, int, error) {
 	if cookie == nil {
 		return buildJWTString()	
 	}
 
-	checkJWT := CheckJWT(cookie)
+	checkJWT, userID := CheckJWT(cookie)
 
 	if checkJWT {
-		return cookie.Value, nil
+		return cookie.Value, userID, nil
 	}
 
 	return buildJWTString()
 }
 
-func buildJWTString() (string, error) {
+func buildJWTString() (string, int, error) {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	userID := r.Int()
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, Claims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(tokenExp)),
 		},
-		UserID: r.Int(),
+		UserID: userID,
 	})
 
 	tokenString, err := token.SignedString([]byte(secretKey))
 	if err != nil {
-		return "", err
+		return "", -1, err
 	}
 
-	return tokenString, nil
+	return tokenString, userID, nil
 }
 
-func CheckJWT(cookie *http.Cookie) bool {
+func CheckJWT(cookie *http.Cookie) (bool, int) {
 	if cookie == nil {
 		app.Log.Warn("Token is empty")
-		return true
+		return true, -1
 	}
 
 	claims := &Claims{UserID: -1}
@@ -68,19 +69,19 @@ func CheckJWT(cookie *http.Cookie) bool {
 
 	if err != nil {		
 		app.Log.Warn("Can't parse token")
-		return false
+		return false, -1
 	}
 
 	if !token.Valid {
 		app.Log.Warn("Token is not valid")
-		return false
+		return false, -1
 	}
 
 	if claims.UserID == -1 {
 		app.Log.Warn("Token doesn't contain UserID")
-		return false
+		return false, -1
 	}
 
 	app.Log.Info("Token is valid", zap.Int("UserID", claims.UserID))
-	return true
+	return true, claims.UserID
 }

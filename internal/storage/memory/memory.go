@@ -70,7 +70,7 @@ func New(conf *config.ServerConfig, logger *zap.Logger, config *config.ServerCon
 	}, nil
 }
 
-func (storeMap *StoreURLMap) AddURL(ctx context.Context, url string, keyURL string) error {
+func (storeMap *StoreURLMap) AddURL(ctx context.Context, url string, keyURL string, userID int) error {
 	storeMap.mu.Lock()
 	defer storeMap.mu.Unlock()
 
@@ -84,7 +84,7 @@ func (storeMap *StoreURLMap) AddURL(ctx context.Context, url string, keyURL stri
 	return nil
 }
 
-func (storeMap *StoreURLMap) AddBatchURL(ctx context.Context, shortOriginalURL []model.KeyOriginalURL) error {
+func (storeMap *StoreURLMap) AddBatchURL(ctx context.Context, shortOriginalURL []model.KeyOriginalURL, userID int) error {
 	storeMap.mu.Lock()
 	defer storeMap.mu.Unlock()
 	err := storeMap.saveShortURLToFileBatch(shortOriginalURL)
@@ -107,7 +107,7 @@ func (storeMap *StoreURLMap) GetURL(ctx context.Context, keyURL string) (string,
 	return url, exist
 }
 
-func (storeMap *StoreURLMap) GetAllURL(ctx context.Context) ([]model.KeyOriginalURL, error) {
+func (storeMap *StoreURLMap) GetAllURL(ctx context.Context, userID int) ([]model.KeyOriginalURL, error) {
 	storeMap.mu.Lock()
 	defer storeMap.mu.Unlock()
 
