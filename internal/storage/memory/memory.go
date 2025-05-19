@@ -70,7 +70,7 @@ func New(conf *config.ServerConfig, logger *zap.Logger, config *config.ServerCon
 	}, nil
 }
 
-func (storeMap *StoreURLMap) AddURL(ctx context.Context, url string, keyURL string) error {
+func (storeMap *StoreURLMap) AddURL(ctx context.Context, url string, keyURL string, userID int) error {
 	storeMap.mu.Lock()
 	defer storeMap.mu.Unlock()
 
@@ -84,7 +84,7 @@ func (storeMap *StoreURLMap) AddURL(ctx context.Context, url string, keyURL stri
 	return nil
 }
 
-func (storeMap *StoreURLMap) AddBatchURL(ctx context.Context, shortOriginalURL []model.ShortOriginalURL) error {
+func (storeMap *StoreURLMap) AddBatchURL(ctx context.Context, shortOriginalURL []model.KeyOriginalURL, userID int) error {
 	storeMap.mu.Lock()
 	defer storeMap.mu.Unlock()
 	err := storeMap.saveShortURLToFileBatch(shortOriginalURL)
@@ -107,11 +107,22 @@ func (storeMap *StoreURLMap) GetURL(ctx context.Context, keyURL string) (string,
 	return url, exist
 }
 
+func (storeMap *StoreURLMap) GetAllURL(ctx context.Context, userID int) ([]model.KeyOriginalURL, error) {
+	storeMap.mu.Lock()
+	defer storeMap.mu.Unlock()
+
+	res := make([]model.KeyOriginalURL, 0, len(storeMap.urls))
+	for k, v := range storeMap.urls {
+		res = append(res, model.KeyOriginalURL{Key: k, OriginalURL: v})
+	}
+	return res, nil
+}
+
 func (storeMap *StoreURLMap) GetShortURL(ctx context.Context, originalURL string) (string, error) {
 	return "", errors.New("unsupport operation")
 }
 
-func (storeMap *StoreURLMap) saveShortURLToFileBatch(shortOriginalURL []model.ShortOriginalURL) error {
+func (storeMap *StoreURLMap) saveShortURLToFileBatch(shortOriginalURL []model.KeyOriginalURL) error {
 	storeMap.logger.Info("Write to file storage", zap.String("file", storeMap.cfg.FileStorage))
 	file, err := os.OpenFile(storeMap.cfg.FileStorage, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0666)
 	if err != nil {

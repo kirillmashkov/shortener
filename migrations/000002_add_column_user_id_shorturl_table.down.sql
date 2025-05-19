@@ -1,0 +1,1 @@
+alter table shorturl drop column user_id;

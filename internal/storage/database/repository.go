@@ -24,7 +24,7 @@ func NewRepositoryShortURL(db *Database, log *zap.Logger) *RepositoryShortURL {
 	return &RepositoryShortURL{db: db, log: log}
 }
 
-func (r *RepositoryShortURL) AddURL(ctx context.Context, url string, keyURL string) error {
+func (r *RepositoryShortURL) AddURL(ctx context.Context, url string, keyURL string, userID int) error {
 	ctx, cancel := context.WithTimeout(ctx, timeoutOperationDB)
 	defer cancel()
 
@@ -36,23 +36,23 @@ func (r *RepositoryShortURL) AddURL(ctx context.Context, url string, keyURL stri
 	defer func() {
 		if err == nil {
 			if errCommit := tx.Commit(ctx); errCommit != nil {
-				r.log.Error("Error commit tran", zap.Error(err))		
+				r.log.Error("Error commit tran", zap.Error(err))
 			}
 		} else {
 			if errRollback := tx.Rollback(ctx); errRollback != nil {
-				r.log.Error("Error rollback tx", zap.Error(errRollback))	
+				r.log.Error("Error rollback tx", zap.Error(errRollback))
 			}
 		}
 	}()
 
-	err = r.insertShortURL(ctx, tx, keyURL, url)
+	err = r.insertShortURL(ctx, tx, keyURL, url, userID)
 	if err != nil {
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) {
 			if pgErr.Code == pgerrcode.UniqueViolation {
 				return model.NewDuplicateURLError(err)
 			}
-		}	
+		}
 
 		return err
 	}
@@ -60,7 +60,7 @@ func (r *RepositoryShortURL) AddURL(ctx context.Context, url string, keyURL stri
 	return nil
 }
 
-func (r *RepositoryShortURL) AddBatchURL(ctx context.Context, shortOriginalURL []model.ShortOriginalURL) error {
+func (r *RepositoryShortURL) AddBatchURL(ctx context.Context, shortOriginalURL []model.KeyOriginalURL, userID int) error {
 	ctx, cancel := context.WithTimeout(ctx, timeoutOperationDB)
 	defer cancel()
 
@@ -72,17 +72,17 @@ func (r *RepositoryShortURL) AddBatchURL(ctx context.Context, shortOriginalURL [
 	defer func() {
 		if err == nil {
 			if errCommit := tx.Commit(ctx); errCommit != nil {
-				r.log.Error("Error commit tran", zap.Error(err))		
+				r.log.Error("Error commit tran", zap.Error(err))
 			}
 		} else {
 			if errRollback := tx.Rollback(ctx); errRollback != nil {
-				r.log.Error("Error rollback tx", zap.Error(errRollback))	
+				r.log.Error("Error rollback tx", zap.Error(errRollback))
 			}
 		}
 	}()
 
 	for _, soURL := range shortOriginalURL {
-		err = r.insertShortURL(ctx, tx, soURL.Key, soURL.OriginalURL)
+		err = r.insertShortURL(ctx, tx, soURL.Key, soURL.OriginalURL, userID)
 		if err != nil {
 			return err
 		}
@@ -91,8 +91,8 @@ func (r *RepositoryShortURL) AddBatchURL(ctx context.Context, shortOriginalURL [
 	return nil
 }
 
-func (r *RepositoryShortURL) insertShortURL(ctx context.Context, tx pgx.Tx, keyURL string, url string) error {
-	_, err := tx.Exec(ctx, "insert into shorturl (id, short_url, original_url) values ($1, $2, $3)", uuid.NewString(), keyURL, url)
+func (r *RepositoryShortURL) insertShortURL(ctx context.Context, tx pgx.Tx, keyURL string, url string, userID int) error {
+	_, err := tx.Exec(ctx, "insert into shorturl (id, short_url, original_url, user_id) values ($1, $2, $3, $4)", uuid.NewString(), keyURL, url, userID)
 	if err != nil {
 		r.log.Error("Error insert short url ",
 			zap.String("key", keyURL),
@@ -129,4 +129,24 @@ func (r *RepositoryShortURL) GetShortURL(ctx context.Context, originalURL string
 	}
 
 	return key, nil
+}
+
+func (r *RepositoryShortURL) GetAllURL(ctx context.Context, userID int) ([]model.KeyOriginalURL, error) {
+	ctx, cancel := context.WithTimeout(ctx, timeoutOperationDB)
+	defer cancel()
+
+	rows, err := r.db.conn.Query(ctx, "select short_url, original_url from shorturl where user_id = $1", userID)
+	if err != nil {
+		r.log.Error("Error get all urls from db", zap.Error(err))
+		return nil, err
+	}
+
+	defer rows.Close()
+
+	res, err := pgx.CollectRows(rows, pgx.RowToStructByPos[model.KeyOriginalURL])
+	for _, j := range res {
+		r.log.Info("Row", zap.String("key", j.Key), zap.String("original", j.OriginalURL))
+	}
+
+	return res, err
 }

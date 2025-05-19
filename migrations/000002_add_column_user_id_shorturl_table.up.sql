@@ -1,0 +1,1 @@
+alter table shorturl add user_id bigint not null default -1;

@@ -10,14 +10,17 @@ import (
 	"net/url"
 
 	"github.com/kirillmashkov/shortener.git/internal/app"
+	"github.com/kirillmashkov/shortener.git/internal/httpserver/security"
 	"github.com/kirillmashkov/shortener.git/internal/model"
+
 	"go.uber.org/zap"
 )
 
 type ServiceShortURL interface {
 	GetShortURL(ctx context.Context, originalURL *url.URL) (string, bool)
-	ProcessURL(ctx context.Context, originalURL string) (string, error)
-	ProcessURLBatch(ctx context.Context, originalURLs []model.URLToShortBatchRequest) ([]model.ShortToURLBatchResponse, error)
+	ProcessURL(ctx context.Context, originalURL string, userID int) (string, error)
+	ProcessURLBatch(ctx context.Context, originalURLs []model.URLToShortBatchRequest, userID int) ([]model.ShortToURLBatchResponse, error)
+	GetAllURL(ctx context.Context, userID int) ([]model.KeyOriginalURL, error)
 }
 
 func GetHandler(res http.ResponseWriter, req *http.Request) {
@@ -36,11 +39,65 @@ func GetHandler(res http.ResponseWriter, req *http.Request) {
 	http.Redirect(res, req, url, http.StatusTemporaryRedirect)
 }
 
+func GetAllURL(res http.ResponseWriter, req *http.Request) {
+	if req.Method != http.MethodGet {
+		http.Error(res, "Only GET requests are allowed!", http.StatusBadRequest)
+		return
+	}
+
+	cookie, err := req.Cookie("token")
+	if err != nil {
+		cookie = nil
+	}
+
+	jwtToken, userID, err := security.GetJWT(cookie)
+	if err != nil {
+		app.Log.Error("Error get token", zap.Error(err))
+		http.Error(res, "Something went wrong", http.StatusBadRequest)
+		return
+	}
+	resCookie := http.Cookie{Name: "token", Value: jwtToken}
+	http.SetCookie(res, &resCookie)
+
+	result, err := app.Service.GetAllURL(req.Context(), userID)
+	if err != nil {
+		http.Error(res, "Something went wrong", http.StatusBadRequest)
+		return
+	}
+
+	res.Header().Set("Content-Type", "application/json")
+	if len(result) == 0 {
+		res.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	res.WriteHeader(http.StatusOK)
+	encoder := json.NewEncoder(res)
+	if err := encoder.Encode(result); err != nil {
+		app.Log.Debug("error encoding result", zap.Error(err))
+		return
+	}
+}
+
 func PostHandler(res http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodPost {
 		http.Error(res, "Only POST requests are allowed!", http.StatusBadRequest)
 		return
 	}
+
+	cookie, err := req.Cookie("token")
+	if err != nil {
+		cookie = nil
+	}
+
+	jwtToken, userID, err := security.GetJWT(cookie)
+	if err != nil {
+		app.Log.Error("Error get token", zap.Error(err))
+		http.Error(res, "Something went wrong", http.StatusBadRequest)
+		return
+	}
+	resCookie := http.Cookie{Name: "token", Value: jwtToken}
+	http.SetCookie(res, &resCookie)
 
 	originalURL, err := io.ReadAll(req.Body)
 	if err != nil {
@@ -48,12 +105,12 @@ func PostHandler(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	shortURL, err := app.Service.ProcessURL(req.Context(), string(originalURL))
+	shortURL, err := app.Service.ProcessURL(req.Context(), string(originalURL), userID)
 	res.Header().Set("content-type", "text/plain")
 	if err != nil {
 		var errDuplicate *model.DuplicateURLError
 		if errors.As(err, &errDuplicate) {
-			res.WriteHeader(http.StatusConflict)	
+			res.WriteHeader(http.StatusConflict)
 			_, err = res.Write([]byte(shortURL))
 			if err != nil {
 				http.Error(res, "Can't write response", http.StatusBadRequest)
@@ -79,6 +136,21 @@ func PostGenerateShortURL(res http.ResponseWriter, req *http.Request) {
 		http.Error(res, "Only POST requests are allowed!", http.StatusBadRequest)
 		return
 	}
+
+	cookie, err := req.Cookie("token")
+	if err != nil {
+		cookie = nil
+	}
+
+	jwtToken, userID, err := security.GetJWT(cookie)
+	if err != nil {
+		app.Log.Error("Error get token", zap.Error(err))
+		http.Error(res, "Something went wrong", http.StatusBadRequest)
+		return
+	}
+	resCookie := http.Cookie{Name: "token", Value: jwtToken}
+	http.SetCookie(res, &resCookie)
+
 	var request model.URLToShortRequest
 	decoder := json.NewDecoder(req.Body)
 	if err := decoder.Decode(&request); err != nil {
@@ -87,17 +159,17 @@ func PostGenerateShortURL(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	shortURL, err := app.Service.ProcessURL(req.Context(), request.OriginalURL)
+	shortURL, err := app.Service.ProcessURL(req.Context(), request.OriginalURL, userID)
 
 	res.Header().Set("Content-Type", "application/json")
-	response := model.ShortToURLReponse {
+	response := model.ShortToURLReponse{
 		ShortURL: shortURL,
 	}
 
 	if err != nil {
 		var errDuplicate *model.DuplicateURLError
 		if errors.As(err, &errDuplicate) {
-			res.WriteHeader(http.StatusConflict)	
+			res.WriteHeader(http.StatusConflict)
 			encoder := json.NewEncoder(res)
 			if err := encoder.Encode(response); err != nil {
 				app.Log.Debug("error encoding response", zap.Error(err))
@@ -113,10 +185,10 @@ func PostGenerateShortURL(res http.ResponseWriter, req *http.Request) {
 
 	res.WriteHeader(http.StatusCreated)
 	encoder := json.NewEncoder(res)
-    if err := encoder.Encode(response); err != nil {
-        app.Log.Debug("error encoding response", zap.Error(err))
-        return
-    }
+	if err := encoder.Encode(response); err != nil {
+		app.Log.Debug("error encoding response", zap.Error(err))
+		return
+	}
 }
 
 func PostGenerateShortURLBatch(res http.ResponseWriter, req *http.Request) {
@@ -124,6 +196,20 @@ func PostGenerateShortURLBatch(res http.ResponseWriter, req *http.Request) {
 		http.Error(res, "Only POST requests are allowed!", http.StatusBadRequest)
 		return
 	}
+
+	cookie, err := req.Cookie("token")
+	if err != nil {
+		cookie = nil
+	}
+
+	jwtToken, userID, err := security.GetJWT(cookie)
+	if err != nil {
+		app.Log.Error("Error get token", zap.Error(err))
+		http.Error(res, "Something went wrong", http.StatusBadRequest)
+		return
+	}
+	resCookie := http.Cookie{Name: "token", Value: jwtToken}
+	http.SetCookie(res, &resCookie)
 
 	var request []model.URLToShortBatchRequest
 	decoder := json.NewDecoder(req.Body)
@@ -133,7 +219,7 @@ func PostGenerateShortURLBatch(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	response, err := app.Service.ProcessURLBatch(req.Context(), request)
+	response, err := app.Service.ProcessURLBatch(req.Context(), request, userID)
 	if err != nil {
 		http.Error(res, "Can't store url batch", http.StatusBadRequest)
 		return
@@ -141,10 +227,10 @@ func PostGenerateShortURLBatch(res http.ResponseWriter, req *http.Request) {
 	res.Header().Set("Content-Type", "application/json")
 	res.WriteHeader(http.StatusCreated)
 	encoder := json.NewEncoder(res)
-    if err := encoder.Encode(response); err != nil {
-        app.Log.Debug("error encoding response", zap.Error(err))
-        return
-    }
+	if err := encoder.Encode(response); err != nil {
+		app.Log.Debug("error encoding response", zap.Error(err))
+		return
+	}
 }
 
 func Ping(res http.ResponseWriter, req *http.Request) {
