@@ -16,7 +16,7 @@ type storeURL interface {
 	GetURL(ctx context.Context, keyURL string) (string, bool, bool)
 	GetAllURL(ctx context.Context, userID int) ([]model.KeyOriginalURL, error)
 	AddBatchURL(ctx context.Context, shortOriginalURL []model.KeyOriginalURL, userID int) error
-	DeleteURLBatch(ctx context.Context, short_url []string, userID int) error
+	DeleteURLBatch(ctx context.Context, shortURL []string, userID int) error
 	GetShortURL(ctx context.Context, originalURL string) (string, error)
 }
 

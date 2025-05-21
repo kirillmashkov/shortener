@@ -91,7 +91,7 @@ func (r *RepositoryShortURL) AddBatchURL(ctx context.Context, shortOriginalURL [
 	return nil
 }
 
-func (r *RepositoryShortURL) DeleteURLBatch(ctx context.Context, short_url []string, userID int) error {
+func (r *RepositoryShortURL) DeleteURLBatch(ctx context.Context, shortURL []string, userID int) error {
 	tx, err := r.db.conn.Begin(ctx)
 	if err != nil {
 		r.log.Error("Error open tran", zap.Error(err))
@@ -110,7 +110,7 @@ func (r *RepositoryShortURL) DeleteURLBatch(ctx context.Context, short_url []str
 	}()
 
 	batch := &pgx.Batch{}
-	for _, data := range short_url {
+	for _, data := range shortURL {
 		r.log.Info("Set deleted = true", zap.String("short_url", data), zap.Int("userID", userID))
 		batch.Queue("update shorturl set deleted = true where short_url = $1 and user_id = $2", data, userID)
 	}
