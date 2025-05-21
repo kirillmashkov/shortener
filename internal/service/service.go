@@ -13,9 +13,10 @@ import (
 
 type storeURL interface {
 	AddURL(ctx context.Context, url string, keyURL string, userID int) error
-	GetURL(ctx context.Context, keyURL string) (string, bool)
+	GetURL(ctx context.Context, keyURL string) (string, bool, bool)
 	GetAllURL(ctx context.Context, userID int) ([]model.KeyOriginalURL, error)
 	AddBatchURL(ctx context.Context, shortOriginalURL []model.KeyOriginalURL, userID int) error
+	DeleteURLBatch(ctx context.Context, short_url []string, userID int) error
 	GetShortURL(ctx context.Context, originalURL string) (string, error)
 }
 
@@ -28,15 +29,19 @@ func New(storage storeURL, config config.ServerConfig) *Service {
 	return &Service{storage: storage, cfg: config}
 }
 
-func (s *Service) GetShortURL(ctx context.Context, originalURL *url.URL) (string, bool) {
+func (s *Service) GetShortURL(ctx context.Context, originalURL *url.URL) (string, bool, bool) {
 	key := originalURL.Path[len("/"):]
-	url, exist := s.storage.GetURL(ctx, key)
+	url, deleted, exist := s.storage.GetURL(ctx, key)
 
 	if !exist {
-		return "", false
+		return "", false, false
 	}
 
-	return url, true
+	if deleted {
+		return "", true, true
+	}
+
+	return url, false, true
 }
 
 func (s *Service) GetAllURL(ctx context.Context, userID int) ([]model.ShortOriginalURL, error) {
@@ -88,6 +93,10 @@ func (s *Service) ProcessURLBatch(ctx context.Context, originalURLs []model.URLT
 	}
 
 	return results, nil
+}
+
+func (s *Service) DeleteURLBatch(ctx context.Context, userID int, shortURLs []string) error {
+	return s.storage.DeleteURLBatch(ctx, shortURLs, userID)
 }
 
 func (s *Service) keyURL() string {

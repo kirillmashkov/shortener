@@ -20,6 +20,7 @@ type ServiceShortURL interface {
 	GetShortURL(ctx context.Context, originalURL *url.URL) (string, bool)
 	ProcessURL(ctx context.Context, originalURL string, userID int) (string, error)
 	ProcessURLBatch(ctx context.Context, originalURLs []model.URLToShortBatchRequest, userID int) ([]model.ShortToURLBatchResponse, error)
+	DeleteURLBatch(ctx context.Context, userID int, shortURLs []string)
 	GetAllURL(ctx context.Context, userID int) ([]model.KeyOriginalURL, error)
 }
 
@@ -29,10 +30,15 @@ func GetHandler(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	url, exist := app.Service.GetShortURL(req.Context(), req.URL)
+	url, deleted, exist := app.Service.GetShortURL(req.Context(), req.URL)
 
 	if !exist {
 		http.Error(res, "Key not found", http.StatusBadRequest)
+		return
+	}
+
+	if deleted {
+		res.WriteHeader(http.StatusGone)
 		return
 	}
 
@@ -231,6 +237,41 @@ func PostGenerateShortURLBatch(res http.ResponseWriter, req *http.Request) {
 		app.Log.Debug("error encoding response", zap.Error(err))
 		return
 	}
+}
+
+func DeleteURLBatch(res http.ResponseWriter, req *http.Request) {
+	if req.Method != http.MethodDelete {
+		http.Error(res, "Only Delete requests are allowed!", http.StatusBadRequest)
+		return
+	}
+
+	cookie, err := req.Cookie("token")
+	if err != nil {
+		app.Log.Error("Error get token", zap.Error(err))
+		http.Error(res, "Something went wrong", http.StatusBadRequest)
+	}
+
+	_, userID, err := security.GetJWT(cookie)
+	if err != nil {
+		app.Log.Error("Error get token", zap.Error(err))
+		http.Error(res, "Something went wrong", http.StatusBadRequest)
+		return
+	}
+
+	var shortURLs []string
+	decoder := json.NewDecoder(req.Body)
+	if err := decoder.Decode(&shortURLs); err != nil {
+		app.Log.Debug("cannot parse request JSON body", zap.Error(err))
+		http.Error(res, "cannot parse request JSON body", http.StatusBadRequest)
+		return
+	}
+	err = app.Service.DeleteURLBatch(req.Context(), userID, shortURLs)
+	if err != nil {
+		http.Error(res, "Something went wrong", http.StatusBadRequest)
+		return
+	}
+
+	res.WriteHeader(http.StatusAccepted)
 }
 
 func Ping(res http.ResponseWriter, req *http.Request) {

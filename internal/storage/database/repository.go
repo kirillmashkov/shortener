@@ -91,6 +91,40 @@ func (r *RepositoryShortURL) AddBatchURL(ctx context.Context, shortOriginalURL [
 	return nil
 }
 
+func (r *RepositoryShortURL) DeleteURLBatch(ctx context.Context, short_url []string, userID int) error {
+	tx, err := r.db.conn.Begin(ctx)
+	if err != nil {
+		r.log.Error("Error open tran", zap.Error(err))
+		return err
+	}
+	defer func() {
+		if err == nil {
+			if errCommit := tx.Commit(ctx); errCommit != nil {
+				r.log.Error("Error commit tran", zap.Error(err))
+			}
+		} else {
+			if errRollback := tx.Rollback(ctx); errRollback != nil {
+				r.log.Error("Error rollback tx", zap.Error(errRollback))
+			}
+		}
+	}()
+
+	batch := &pgx.Batch{}
+	for _, data := range short_url {
+		r.log.Info("Set deleted = true", zap.String("short_url", data), zap.Int("userID", userID))
+		batch.Queue("update shorturl set deleted = true where short_url = $1 and user_id = $2", data, userID)
+	}
+
+	res := tx.SendBatch(ctx, batch)
+	
+	errClose := res.Close()
+	if errClose != nil {
+		r.log.Error("Error close batch delete short url", zap.Error(err))
+	}
+
+	return nil
+}
+
 func (r *RepositoryShortURL) insertShortURL(ctx context.Context, tx pgx.Tx, keyURL string, url string, userID int) error {
 	_, err := tx.Exec(ctx, "insert into shorturl (id, short_url, original_url, user_id) values ($1, $2, $3, $4)", uuid.NewString(), keyURL, url, userID)
 	if err != nil {
@@ -104,18 +138,19 @@ func (r *RepositoryShortURL) insertShortURL(ctx context.Context, tx pgx.Tx, keyU
 	return nil
 }
 
-func (r *RepositoryShortURL) GetURL(ctx context.Context, keyURL string) (string, bool) {
+func (r *RepositoryShortURL) GetURL(ctx context.Context, keyURL string) (string, bool, bool) {
 	ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
 	defer cancel()
 
 	var originalURL string
-	err := r.db.conn.QueryRow(ctx, "select original_url from shorturl where short_url = $1", keyURL).Scan(&originalURL)
+	var deleted bool
+	err := r.db.conn.QueryRow(ctx, "select original_url, deleted from shorturl where short_url = $1", keyURL).Scan(&originalURL, &deleted)
 	if err != nil {
 		r.log.Error("Error get originalUrl from db", zap.String("shortUrl", keyURL), zap.Error(err))
-		return "", false
+		return "", false, false
 	}
 
-	return originalURL, true
+	return originalURL, deleted, true
 }
 
 func (r *RepositoryShortURL) GetShortURL(ctx context.Context, originalURL string) (string, error) {

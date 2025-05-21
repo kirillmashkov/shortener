@@ -100,11 +100,11 @@ func (storeMap *StoreURLMap) AddBatchURL(ctx context.Context, shortOriginalURL [
 	return nil
 }
 
-func (storeMap *StoreURLMap) GetURL(ctx context.Context, keyURL string) (string, bool) {
+func (storeMap *StoreURLMap) GetURL(ctx context.Context, keyURL string) (string, bool, bool) {
 	storeMap.mu.RLock()
 	url, exist := storeMap.urls[keyURL]
 	storeMap.mu.RUnlock()
-	return url, exist
+	return url, false, exist
 }
 
 func (storeMap *StoreURLMap) GetAllURL(ctx context.Context, userID int) ([]model.KeyOriginalURL, error) {
@@ -120,6 +120,10 @@ func (storeMap *StoreURLMap) GetAllURL(ctx context.Context, userID int) ([]model
 
 func (storeMap *StoreURLMap) GetShortURL(ctx context.Context, originalURL string) (string, error) {
 	return "", errors.New("unsupport operation")
+}
+
+func (storeMap *StoreURLMap) DeleteURLBatch(ctx context.Context, short_url []string, userID int) error {
+	return errors.New("unsupport operation")
 }
 
 func (storeMap *StoreURLMap) saveShortURLToFileBatch(shortOriginalURL []model.KeyOriginalURL) error {
