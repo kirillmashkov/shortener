@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/kirillmashkov/shortener.git/internal/config"
 	"go.uber.org/zap"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 const migrateDir = "migrations"
@@ -19,6 +20,7 @@ const timeoutPindDB = 1 * time.Second
 type Database struct {
 	cfg     *config.ServerConfig
 	conn	*pgx.Conn
+	dbpool	*pgxpool.Pool
 	logger	*zap.Logger
 }
 
@@ -39,11 +41,14 @@ func (d *Database) Ping(ctx context.Context) error {
 func (d *Database) Open() error {
 	var err error
 	d.conn, err = pgx.Connect(context.Background(), d.cfg.Connection)
+	d.dbpool, err = pgxpool.New(context.Background(), d.cfg.Connection)
 	return err
 }
 
 func (d *Database) Close() error {
-	return d.conn.Close(context.Background())
+	err :=  d.conn.Close(context.Background())
+	d.dbpool.Close()
+	return err
 }
 
 func (d *Database) Migrate() error {

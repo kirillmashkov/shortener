@@ -29,7 +29,8 @@ func (r *RepositoryShortURL) AddURL(ctx context.Context, url string, keyURL stri
 	ctx, cancel := context.WithTimeout(ctx, timeoutOperationDB)
 	defer cancel()
 
-	tx, err := r.db.conn.Begin(ctx)
+	// tx, err := r.db.conn.Begin(ctx)
+	tx, err := r.db.dbpool.Begin(ctx)
 	if err != nil {
 		r.log.Error("Error open tran", zap.Error(err))
 		// return err
