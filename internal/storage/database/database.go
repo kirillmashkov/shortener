@@ -41,7 +41,7 @@ func (d *Database) Ping(ctx context.Context) error {
 func (d *Database) Open() error {
 	var err error
 	d.conn, err = pgx.Connect(context.Background(), d.cfg.Connection)
-	d.dbpool, err = pgxpool.New(context.Background(), d.cfg.Connection)
+	d.dbpool, _ = pgxpool.New(context.Background(), d.cfg.Connection)
 	return err
 }
 
