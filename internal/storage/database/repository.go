@@ -151,7 +151,8 @@ func (r *RepositoryShortURL) GetURL(ctx context.Context, keyURL string) (string,
 
 	var originalURL string
 	var deleted bool
-	err := r.db.conn.QueryRow(ctx, "select original_url, deleted from shorturl where short_url = $1", keyURL).Scan(&originalURL, &deleted)
+	// err := r.db.conn.QueryRow(ctx, "select original_url, deleted from shorturl where short_url = $1", keyURL).Scan(&originalURL, &deleted)
+	err := r.db.dbpool.QueryRow(ctx, "select original_url, deleted from shorturl where short_url = $1", keyURL).Scan(&originalURL, &deleted)
 	if err != nil {
 		r.log.Error("Error get originalUrl from db", zap.String("shortUrl", keyURL), zap.Error(err))
 		return "", false, false
