@@ -32,13 +32,13 @@ func Initialize() error {
 		if err != nil {
 			return nil
 		}
-		Service = service.New(Storage, ServerConf)
+		Service = service.New(Storage, ServerConf, Log)
 	} else {
 		if err := Database.Migrate(); err != nil {
 			return err
 		}
 		RepositoryShortURL = database.NewRepositoryShortURL(Database, Log)
-		Service = service.New(RepositoryShortURL, ServerConf)
+		Service = service.New(RepositoryShortURL, ServerConf, Log)
 	}
 
 	ServiceUtils = service.NewServiceUtils(Database, Log)

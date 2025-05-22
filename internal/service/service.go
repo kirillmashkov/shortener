@@ -9,6 +9,7 @@ import (
 
 	"github.com/kirillmashkov/shortener.git/internal/config"
 	"github.com/kirillmashkov/shortener.git/internal/model"
+	"go.uber.org/zap"
 )
 
 type storeURL interface {
@@ -23,10 +24,11 @@ type storeURL interface {
 type Service struct {
 	storage storeURL
 	cfg     config.ServerConfig
+	log		*zap.Logger
 }
 
-func New(storage storeURL, config config.ServerConfig) *Service {
-	return &Service{storage: storage, cfg: config}
+func New(storage storeURL, config config.ServerConfig, log *zap.Logger) *Service {
+	return &Service{storage: storage, cfg: config, log: log}
 }
 
 func (s *Service) GetShortURL(ctx context.Context, originalURL *url.URL) (string, bool, bool) {
@@ -71,6 +73,7 @@ func (s *Service) ProcessURL(ctx context.Context, originalURL string, userID int
 
 			return s.shortURL(key), errAddURL
 		}
+		s.log.Error("Error add url for originalURL", zap.String("originalURL", originalURL), zap.Error(err))
 		return "", err
 	}
 	return shortURL, nil
