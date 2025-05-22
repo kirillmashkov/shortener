@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -31,7 +32,8 @@ func (r *RepositoryShortURL) AddURL(ctx context.Context, url string, keyURL stri
 	tx, err := r.db.conn.Begin(ctx)
 	if err != nil {
 		r.log.Error("Error open tran", zap.Error(err))
-		return err
+		// return err
+		return fmt.Errorf("error open tran %w", err)
 	}
 	defer func() {
 		if err == nil {
@@ -54,7 +56,8 @@ func (r *RepositoryShortURL) AddURL(ctx context.Context, url string, keyURL stri
 			}
 		}
 
-		return err
+		// return err
+		return fmt.Errorf("error insert url %w", err)
 	}
 
 	return nil
