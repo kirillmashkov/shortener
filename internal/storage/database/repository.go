@@ -68,7 +68,7 @@ func (r *RepositoryShortURL) AddBatchURL(ctx context.Context, shortOriginalURL [
 	ctx, cancel := context.WithTimeout(ctx, timeoutOperationDB)
 	defer cancel()
 
-	tx, err := r.db.conn.Begin(ctx)
+	tx, err := r.db.dbpool.Begin(ctx)
 	if err != nil {
 		r.log.Error("Error open tran", zap.Error(err))
 		return err
@@ -167,7 +167,7 @@ func (r *RepositoryShortURL) GetShortURL(ctx context.Context, originalURL string
 	defer cancel()
 
 	var key string
-	err := r.db.conn.QueryRow(ctx, "select short_url from shorturl where original_url = $1", originalURL).Scan(&key)
+	err := r.db.dbpool.QueryRow(ctx, "select short_url from shorturl where original_url = $1", originalURL).Scan(&key)
 	if err != nil {
 		return "", err
 	}
@@ -179,7 +179,7 @@ func (r *RepositoryShortURL) GetAllURL(ctx context.Context, userID int) ([]model
 	ctx, cancel := context.WithTimeout(ctx, timeoutOperationDB)
 	defer cancel()
 
-	rows, err := r.db.conn.Query(ctx, "select short_url, original_url from shorturl where user_id = $1", userID)
+	rows, err := r.db.dbpool.Query(ctx, "select short_url, original_url from shorturl where user_id = $1", userID)
 	if err != nil {
 		r.log.Error("Error get all urls from db", zap.Error(err))
 		return nil, err
