@@ -125,7 +125,7 @@ func PostHandler(res http.ResponseWriter, req *http.Request) {
 			return
 		}
 		app.Log.Error("Error process URL", zap.Error(err))
-		errorString := fmt.Sprintf("Something went wrong when generate short url for %s", string(originalURL))
+		errorString := fmt.Sprintf("Something went wrong when generate short url for %s error %s", string(originalURL), err)
 		http.Error(res, errorString, http.StatusBadRequest)
 		return
 	}
