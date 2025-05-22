@@ -73,7 +73,6 @@ func (s *Service) ProcessURL(ctx context.Context, originalURL string, userID int
 
 			return s.shortURL(key), errAddURL
 		}
-		s.log.Error("Error add url for originalURL", zap.String("originalURL", originalURL), zap.Error(err))
 		return "", err
 	}
 	return shortURL, nil

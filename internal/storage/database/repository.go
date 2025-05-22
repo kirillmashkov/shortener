@@ -3,7 +3,6 @@ package database
 import (
 	"context"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/google/uuid"
@@ -29,12 +28,10 @@ func (r *RepositoryShortURL) AddURL(ctx context.Context, url string, keyURL stri
 	ctx, cancel := context.WithTimeout(ctx, timeoutOperationDB)
 	defer cancel()
 
-	// tx, err := r.db.conn.Begin(ctx)
 	tx, err := r.db.dbpool.Begin(ctx)
 	if err != nil {
 		r.log.Error("Error open tran", zap.Error(err))
-		// return err
-		return fmt.Errorf("error open tran %w", err)
+		return err
 	}
 	defer func() {
 		if err == nil {
@@ -57,8 +54,7 @@ func (r *RepositoryShortURL) AddURL(ctx context.Context, url string, keyURL stri
 			}
 		}
 
-		// return err
-		return fmt.Errorf("error insert url %w", err)
+		return err
 	}
 
 	return nil
@@ -99,7 +95,6 @@ func (r *RepositoryShortURL) DeleteURLBatch(ctx context.Context, shortURL []stri
 	ctx, cancel := context.WithTimeout(ctx, timeoutOperationDB)
 	defer cancel()
 
-	// tx, err := r.db.conn.Begin(ctx)
 	tx, err := r.db.dbpool.Begin(ctx)
 	if err != nil {
 		r.log.Error("Error open tran", zap.Error(err))
@@ -152,7 +147,6 @@ func (r *RepositoryShortURL) GetURL(ctx context.Context, keyURL string) (string,
 
 	var originalURL string
 	var deleted bool
-	// err := r.db.conn.QueryRow(ctx, "select original_url, deleted from shorturl where short_url = $1", keyURL).Scan(&originalURL, &deleted)
 	err := r.db.dbpool.QueryRow(ctx, "select original_url, deleted from shorturl where short_url = $1", keyURL).Scan(&originalURL, &deleted)
 	if err != nil {
 		r.log.Error("Error get originalUrl from db", zap.String("shortUrl", keyURL), zap.Error(err))
