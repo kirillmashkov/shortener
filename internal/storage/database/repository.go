@@ -92,6 +92,9 @@ func (r *RepositoryShortURL) AddBatchURL(ctx context.Context, shortOriginalURL [
 }
 
 func (r *RepositoryShortURL) DeleteURLBatch(ctx context.Context, shortURL []string, userID int) error {
+	ctx, cancel := context.WithTimeout(ctx, timeoutOperationDB)
+	defer cancel()
+
 	tx, err := r.db.conn.Begin(ctx)
 	if err != nil {
 		r.log.Error("Error open tran", zap.Error(err))
