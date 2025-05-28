@@ -1,9 +1,12 @@
 package app
 
 import (
+	"sync"
+
 	"github.com/kirillmashkov/shortener.git/internal/config"
-	"github.com/kirillmashkov/shortener.git/internal/storage/database"
+	"github.com/kirillmashkov/shortener.git/internal/model"
 	"github.com/kirillmashkov/shortener.git/internal/service"
+	"github.com/kirillmashkov/shortener.git/internal/storage/database"
 	"github.com/kirillmashkov/shortener.git/internal/storage/memory"
 	"go.uber.org/zap"
 )
@@ -21,8 +24,8 @@ var Log *zap.Logger = zap.NewNop()
 
 func Initialize() error {
 	var err error
-	
-	config.InitServerConf(&ServerConf, Log)	
+
+	config.InitServerConf(&ServerConf, Log)
 
 	Database = database.New(&ServerConf, Log)
 	err = Database.Open()
@@ -34,11 +37,16 @@ func Initialize() error {
 		}
 		Service = service.New(Storage, ServerConf, Log)
 	} else {
+
 		if err := Database.Migrate(); err != nil {
 			return err
 		}
 		RepositoryShortURL = database.NewRepositoryShortURL(Database, Log)
 		Service = service.New(RepositoryShortURL, ServerConf, Log)
+
+		model.Wg = &sync.WaitGroup{}
+		model.ShortURLchan = make(chan model.ShortURLUserID)
+		go RepositoryShortURL.DeleteURLBatchProcessor()
 	}
 
 	ServiceUtils = service.NewServiceUtils(Database, Log)
@@ -47,10 +55,10 @@ func Initialize() error {
 }
 
 func Close() {
-	
+
 	errClose := Database.Close()
 	if errClose != nil {
 		Log.Error("Error close connection db", zap.Error(errClose))
 	}
-	
+
 }

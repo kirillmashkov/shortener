@@ -17,7 +17,7 @@ type storeURL interface {
 	GetURL(ctx context.Context, keyURL string) (string, bool, bool)
 	GetAllURL(ctx context.Context, userID int) ([]model.KeyOriginalURL, error)
 	AddBatchURL(ctx context.Context, shortOriginalURL []model.KeyOriginalURL, userID int) error
-	DeleteURLBatch(ctx context.Context, shortURL []string, userID int) error
+	DeleteURLBatchProcessor()
 	GetShortURL(ctx context.Context, originalURL string) (string, error)
 }
 
@@ -64,14 +64,13 @@ func (s *Service) ProcessURL(ctx context.Context, originalURL string, userID int
 	keyURL := s.keyURL()
 	shortURL := s.shortURL(keyURL)
 	if err := s.storage.AddURL(ctx, originalURL, keyURL, userID); err != nil {
-		var errAddURL *model.DuplicateURLError
-		if errors.As(err, &errAddURL) {
+		if errors.Is(err, model.ErrDuplicateURL) {
 			key, errGetShortURL := s.storage.GetShortURL(ctx, originalURL)
 			if errGetShortURL != nil {
 				return "", errors.New("can't get short url")
 			}
 
-			return s.shortURL(key), errAddURL
+			return s.shortURL(key), err
 		}
 		return "", err
 	}
@@ -97,8 +96,9 @@ func (s *Service) ProcessURLBatch(ctx context.Context, originalURLs []model.URLT
 	return results, nil
 }
 
-func (s *Service) DeleteURLBatch(ctx context.Context, userID int, shortURLs []string) error {
-	return s.storage.DeleteURLBatch(ctx, shortURLs, userID)
+func (s *Service) DeleteURLBatch(userID int, shortURLs []string) {
+	shortURLUser := model.ShortURLUserID{ShortURLs: shortURLs, UserID: userID}
+	model.ShortURLchan <- shortURLUser
 }
 
 func (s *Service) keyURL() string {

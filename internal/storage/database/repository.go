@@ -50,7 +50,7 @@ func (r *RepositoryShortURL) AddURL(ctx context.Context, url string, keyURL stri
 		var pgErr *pgconn.PgError
 		if errors.As(err, &pgErr) {
 			if pgErr.Code == pgerrcode.UniqueViolation {
-				return model.NewDuplicateURLError(err)
+				return model.ErrDuplicateURL
 			}
 		}
 
@@ -91,14 +91,14 @@ func (r *RepositoryShortURL) AddBatchURL(ctx context.Context, shortOriginalURL [
 	return nil
 }
 
-func (r *RepositoryShortURL) DeleteURLBatch(ctx context.Context, shortURL []string, userID int) error {
-	ctx, cancel := context.WithTimeout(ctx, timeoutOperationDB)
+func (r *RepositoryShortURL) deleteURLBatch(shortURL []string, userID int) {
+	ctx, cancel := context.WithTimeout(context.Background(), timeoutOperationDB)
 	defer cancel()
 
 	tx, err := r.db.dbpool.Begin(ctx)
 	if err != nil {
 		r.log.Error("Error open tran", zap.Error(err))
-		return err
+		return
 	}
 	defer func() {
 		if err == nil {
@@ -124,8 +124,14 @@ func (r *RepositoryShortURL) DeleteURLBatch(ctx context.Context, shortURL []stri
 	if errClose != nil {
 		r.log.Error("Error close batch delete short url", zap.Error(err))
 	}
+}
 
-	return nil
+func (r *RepositoryShortURL) DeleteURLBatchProcessor() {
+	defer model.Wg.Done()
+	
+	for s := range model.ShortURLchan {
+		r.deleteURLBatch(s.ShortURLs, s.UserID)
+	}
 }
 
 func (r *RepositoryShortURL) insertShortURL(ctx context.Context, tx pgx.Tx, keyURL string, url string, userID int) error {

@@ -122,8 +122,8 @@ func (storeMap *StoreURLMap) GetShortURL(ctx context.Context, originalURL string
 	return "", errors.New("unsupport operation")
 }
 
-func (storeMap *StoreURLMap) DeleteURLBatch(ctx context.Context, shortURL []string, userID int) error {
-	return errors.New("unsupport operation")
+func (storeMap *StoreURLMap) DeleteURLBatchProcessor() {
+	storeMap.logger.Error("unsupport operation")
 }
 
 func (storeMap *StoreURLMap) saveShortURLToFileBatch(shortOriginalURL []model.KeyOriginalURL) error {

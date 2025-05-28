@@ -2,12 +2,13 @@ package main
 
 import (
 	"flag"
-	"net/http"
 	"log"
+	"net/http"
 
 	"github.com/kirillmashkov/shortener.git/internal/app"
-	"github.com/kirillmashkov/shortener.git/internal/logger"
 	"github.com/kirillmashkov/shortener.git/internal/httpserver/router"
+	"github.com/kirillmashkov/shortener.git/internal/logger"
+	"github.com/kirillmashkov/shortener.git/internal/model"
 )
 
 func main() {
@@ -30,5 +31,13 @@ func main() {
 	err = http.ListenAndServe(app.ServerConf.Host, router.Serv())
 	if err != nil {
 		panic(err)
+	}
+
+	if model.ShortURLchan != nil {
+		close(model.ShortURLchan)
+	}
+
+	if model.Wg != nil {
+		model.Wg.Wait()
 	}
 }
