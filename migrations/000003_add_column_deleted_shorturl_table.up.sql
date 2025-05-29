@@ -1,0 +1,1 @@
+alter table shorturl add deleted bool not null default false;

@@ -3,15 +3,16 @@ package handler
 import (
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
-	"log"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/kirillmashkov/shortener.git/internal/app"
 	"github.com/kirillmashkov/shortener.git/internal/httpserver/middleware/compress"
+	"github.com/kirillmashkov/shortener.git/internal/httpserver/middleware/security"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -46,13 +47,18 @@ func TestPostHandler(t *testing.T) {
 
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 	
+	r := chi.NewRouter()
+	r.Use(security.Auth)
+	r.Post("/", PostHandler)
+
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 
 			request := httptest.NewRequest(http.MethodPost, "/", test.requestLink)
 			// создаём новый Recorder
 			w := httptest.NewRecorder()
-			PostHandler(w, request)
+			// PostHandler(w, request)
+			r.ServeHTTP(w, request)
 
 			res := w.Result()
 			// проверяем код ответа
@@ -137,6 +143,7 @@ func TestPostGenerateShortURL(t *testing.T) {
 
 	r := chi.NewRouter()
 	r.Use(compress.Compress)
+	r.Use(security.Auth)
 	r.Post("/api/shorten", PostGenerateShortURL)
 
 	for _, test := range tests {
