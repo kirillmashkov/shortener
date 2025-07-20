@@ -24,7 +24,7 @@ type storeURL interface {
 type Service struct {
 	storage storeURL
 	cfg     config.ServerConfig
-	log		*zap.Logger
+	log     *zap.Logger
 }
 
 func New(storage storeURL, config config.ServerConfig, log *zap.Logger) *Service {

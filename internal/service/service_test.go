@@ -21,6 +21,7 @@ var Database *database.Database
 var RepositoryShortURL *database.RepositoryShortURL
 var ServiceShort *Service
 var Storage *memory.StoreURLMap
+
 const originalURLPrefix = "http://www.yandex.ru/"
 
 func Init() {
@@ -38,22 +39,21 @@ func changeWorkingDir() {
 	_, filename, _, _ := runtime.Caller(0)
 	dir := path.Join(path.Dir(filename), "../../")
 	err := os.Chdir(dir)
-  	if err != nil {
+	if err != nil {
 		Log.Error("Error change working dir", zap.Error(err))
-    	panic(err)
- 	}
+		panic(err)
+	}
 }
 
 func BenchmarkPostHandler(b *testing.B) {
 	changeWorkingDir()
 	Init()
-	
+
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 
 	strconv.Itoa(rand.IntN(100000))
 	for i := 0; i < b.N; i++ {
-		ServiceShort.ProcessURL(b.Context(), originalURLPrefix + strconv.Itoa(rand.IntN(100000)), 1)
+		ServiceShort.ProcessURL(b.Context(), originalURLPrefix+strconv.Itoa(rand.IntN(100000)), 1)
 	}
 
 }
-

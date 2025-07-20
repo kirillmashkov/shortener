@@ -6,8 +6,8 @@ import (
 	"net/http"
 
 	"math/rand"
-	"time"
 	"strings"
+	"time"
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/kirillmashkov/shortener.git/internal/app"

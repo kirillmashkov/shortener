@@ -37,7 +37,7 @@ var ErrDuplicateURL = errors.New("duplicate url")
 
 type ShortURLUserID struct {
 	ShortURLs []string
-	UserID int
+	UserID    int
 }
 
 var ShortURLchan chan ShortURLUserID

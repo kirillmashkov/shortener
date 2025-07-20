@@ -86,12 +86,12 @@ func PostHandler(res http.ResponseWriter, req *http.Request) {
 	}
 
 	u := security.UserIDType("userID")
-	
+
 	shortURL, err := app.Service.ProcessURL(req.Context(), string(originalURL), req.Context().Value(u).(int))
 	res.Header().Set("content-type", "text/plain")
 	if err != nil {
 		errorString := fmt.Sprintf("Something went wrong when generate short url for %s", string(originalURL))
-		if errors.Is(err,model.ErrDuplicateURL) {
+		if errors.Is(err, model.ErrDuplicateURL) {
 			res.WriteHeader(http.StatusConflict)
 			_, err = res.Write([]byte(shortURL))
 			if err != nil {

@@ -8,7 +8,7 @@ import (
 )
 
 type ServiceUtils struct {
-	db *database.Database
+	db  *database.Database
 	log *zap.Logger
 }
 

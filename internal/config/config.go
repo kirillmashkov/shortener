@@ -10,7 +10,7 @@ type ServerConfig struct {
 	Host        string "env:\"SERVER_ADDRESS\""
 	Redirect    string "env:\"BASE_URL\""
 	FileStorage string "env:\"FILE_STORAGE_PATH\""
-	Connection	string "env:\"DATABASE_DSN\""
+	Connection  string "env:\"DATABASE_DSN\""
 }
 
 var ServerEnv ServerConfig

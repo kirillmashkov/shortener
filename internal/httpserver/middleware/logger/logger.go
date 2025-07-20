@@ -1,13 +1,12 @@
 package logger
 
 import (
+	"github.com/kirillmashkov/shortener.git/internal/app"
+	"github.com/kirillmashkov/shortener.git/internal/httpserver/middleware"
+	"go.uber.org/zap"
 	"net/http"
 	"time"
-	"github.com/kirillmashkov/shortener.git/internal/app"
-    "github.com/kirillmashkov/shortener.git/internal/httpserver/middleware"
-	"go.uber.org/zap"
 )
-
 
 type ResponseWrapper interface {
 	http.ResponseWriter
@@ -20,28 +19,27 @@ func Logger(next http.Handler) http.Handler {
 		t1 := time.Now()
 		cookie, err := r.Cookie("token")
 		var token string
-		
+
 		if err == nil {
 			token = cookie.Value
 		}
 		app.Log.Info("request",
-            zap.String("method", r.Method),
-            zap.String("path", r.URL.Path),
+			zap.String("method", r.Method),
+			zap.String("path", r.URL.Path),
 			zap.String("token", token),
-        )
+		)
 
 		ww := wrap(w)
 
-        next.ServeHTTP(ww, r)		
+		next.ServeHTTP(ww, r)
 
 		app.Log.Info("response",
 			zap.Duration("elapsed", time.Since(t1)),
-            zap.Int("status", ww.Status()),
-            zap.Int("content length", ww.Bytes()))
+			zap.Int("status", ww.Status()),
+			zap.Int("content length", ww.Bytes()))
 	})
-}	
-
-func wrap(w http.ResponseWriter) ResponseWrapper {
-    return &middleware.Writer{ResponseWriter: w}
 }
 
+func wrap(w http.ResponseWriter) ResponseWrapper {
+	return &middleware.Writer{ResponseWriter: w}
+}

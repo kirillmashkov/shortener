@@ -9,19 +9,19 @@ import (
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
 	_ "github.com/golang-migrate/migrate/v4/source/file"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/kirillmashkov/shortener.git/internal/config"
 	"go.uber.org/zap"
-	"github.com/jackc/pgx/v5/pgxpool"
 )
 
 const migrateDir = "migrations"
 const timeoutPindDB = 1 * time.Second
 
 type Database struct {
-	cfg     *config.ServerConfig
-	conn	*pgx.Conn
-	dbpool	*pgxpool.Pool
-	logger	*zap.Logger
+	cfg    *config.ServerConfig
+	conn   *pgx.Conn
+	dbpool *pgxpool.Pool
+	logger *zap.Logger
 }
 
 func New(config *config.ServerConfig, logger *zap.Logger) *Database {
@@ -46,13 +46,13 @@ func (d *Database) Open() error {
 }
 
 func (d *Database) Close() error {
-	err :=  d.conn.Close(context.Background())
+	err := d.conn.Close(context.Background())
 	d.dbpool.Close()
 	return err
 }
 
 func (d *Database) Migrate() error {
-	m, err := migrate.New("file://" + migrateDir, d.cfg.Connection)
+	m, err := migrate.New("file://"+migrateDir, d.cfg.Connection)
 	if err != nil {
 		d.logger.Error("Can't initialize migrations", zap.Error(err))
 		return err

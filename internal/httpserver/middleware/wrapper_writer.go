@@ -5,9 +5,9 @@ import (
 )
 
 type Writer struct {
-    http.ResponseWriter
-    code int
-    bytes int
+	http.ResponseWriter
+	code  int
+	bytes int
 }
 
 func (wr *Writer) Write(buf []byte) (n int, err error) {

@@ -119,7 +119,7 @@ func (r *RepositoryShortURL) deleteURLBatch(shortURL []string, userID int) {
 	}
 
 	res := tx.SendBatch(ctx, batch)
-	
+
 	errClose := res.Close()
 	if errClose != nil {
 		r.log.Error("Error close batch delete short url", zap.Error(err))
@@ -128,7 +128,7 @@ func (r *RepositoryShortURL) deleteURLBatch(shortURL []string, userID int) {
 
 func (r *RepositoryShortURL) DeleteURLBatchProcessor() {
 	defer model.Wg.Done()
-	
+
 	for s := range model.ShortURLchan {
 		r.deleteURLBatch(s.ShortURLs, s.UserID)
 	}

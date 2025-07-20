@@ -46,7 +46,7 @@ func TestPostHandler(t *testing.T) {
 	}
 
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
-	
+
 	r := chi.NewRouter()
 	r.Use(security.Auth)
 	r.Post("/", PostHandler)
@@ -122,22 +122,22 @@ func TestGetHandler(t *testing.T) {
 
 func TestPostGenerateShortURL(t *testing.T) {
 	tests := []struct {
-		name string
-		body string
+		name         string
+		body         string
 		expectedCode int
-		compress bool
+		compress     bool
 	}{
 		{
-			name: "test successful create short link",
-			body: `{"url": "http://www.lenta.ru"}`,
+			name:         "test successful create short link",
+			body:         `{"url": "http://www.lenta.ru"}`,
 			expectedCode: 201,
-			compress: false,
+			compress:     false,
 		},
 		{
-			name: "test successful create short link",
-			body: `{"url": "http://www.lenta.ru"}`,
+			name:         "test successful create short link",
+			body:         `{"url": "http://www.lenta.ru"}`,
 			expectedCode: 201,
-			compress: true,
+			compress:     true,
 		},
 	}
 
@@ -163,12 +163,11 @@ func TestPostGenerateShortURL(t *testing.T) {
 			assert.Equal(t, test.expectedCode, res.StatusCode)
 			if test.compress {
 				ce := res.Header.Get("Content-Encoding")
-				assert.Equal(t, true, strings.Contains(ce, "gzip"))	
+				assert.Equal(t, true, strings.Contains(ce, "gzip"))
 			} else {
 				ce := res.Header.Get("Content-Encoding")
-				assert.Equal(t, true, !strings.Contains(ce, "gzip"))	
+				assert.Equal(t, true, !strings.Contains(ce, "gzip"))
 			}
-			
 
 			// получаем и проверяем тело запроса
 			_, err := io.ReadAll(res.Body)
@@ -179,5 +178,5 @@ func TestPostGenerateShortURL(t *testing.T) {
 			}()
 			require.NoError(t, err)
 		})
-	}	
+	}
 }

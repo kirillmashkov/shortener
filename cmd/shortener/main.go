@@ -10,7 +10,7 @@ import (
 	"github.com/kirillmashkov/shortener.git/internal/logger"
 	"github.com/kirillmashkov/shortener.git/internal/model"
 
-	_ "net/http/pprof" 
+	_ "net/http/pprof"
 )
 
 func main() {
