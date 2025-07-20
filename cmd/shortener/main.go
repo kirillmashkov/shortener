@@ -9,6 +9,8 @@ import (
 	"github.com/kirillmashkov/shortener.git/internal/httpserver/router"
 	"github.com/kirillmashkov/shortener.git/internal/logger"
 	"github.com/kirillmashkov/shortener.git/internal/model"
+
+	_ "net/http/pprof" 
 )
 
 func main() {
