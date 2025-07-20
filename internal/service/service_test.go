@@ -32,27 +32,6 @@ func Init() {
 		panic(err)
 	}
 	ServiceShort = New(Storage, ServerConf, Log)
-
-	// Database = database.New(&ServerConf, Log)
-	
-	// if err := Database.Open(); err != nil {
-	// 	Log.Error("Error open database", zap.Error(err))
-	// 	panic(err)
-	// }
-
-	// if err := Database.Migrate(); err != nil {
-	// 	Log.Error("Error migrate", zap.Error(err))
-	// 	panic(err)
-	// }
-	// RepositoryShortURL = database.NewRepositoryShortURL(Database, Log)
-	// ServiceShort = New(RepositoryShortURL, ServerConf, Log)
-}
-
-func Finish() {
-	// errClose := Database.Close()
-	// if errClose != nil {
-	// 	Log.Error("Error close connection db", zap.Error(errClose))
-	// }
 }
 
 func changeWorkingDir() {
@@ -76,6 +55,5 @@ func BenchmarkPostHandler(b *testing.B) {
 		ServiceShort.ProcessURL(b.Context(), originalURLPrefix + strconv.Itoa(rand.IntN(100000)), 1)
 	}
 
-	Finish()
 }
 
