@@ -1,3 +1,4 @@
+// Модуль service - слой бизнес логики по управлению короткими ссылками
 package service
 
 import (
@@ -31,6 +32,7 @@ func New(storage storeURL, config config.ServerConfig, log *zap.Logger) *Service
 	return &Service{storage: storage, cfg: config, log: log}
 }
 
+// GetShortURL возвращает исходную ссылку по короткому названию
 func (s *Service) GetShortURL(ctx context.Context, originalURL *url.URL) (string, bool, bool) {
 	key := originalURL.Path[len("/"):]
 	url, deleted, exist := s.storage.GetURL(ctx, key)
@@ -46,6 +48,7 @@ func (s *Service) GetShortURL(ctx context.Context, originalURL *url.URL) (string
 	return url, false, true
 }
 
+// GetAllURL - возвращает все ссылки для пользователя
 func (s *Service) GetAllURL(ctx context.Context, userID int) ([]model.ShortOriginalURL, error) {
 	keyShortURL, err := s.storage.GetAllURL(ctx, userID)
 	if err != nil {
@@ -60,6 +63,7 @@ func (s *Service) GetAllURL(ctx context.Context, userID int) ([]model.ShortOrigi
 	return result, nil
 }
 
+ // ProcessURL - сохраняет исходную ссылку, возвращает короткую ссылку
 func (s *Service) ProcessURL(ctx context.Context, originalURL string, userID int) (string, error) {
 	keyURL := s.keyURL()
 	shortURL := s.shortURL(keyURL)
@@ -77,6 +81,7 @@ func (s *Service) ProcessURL(ctx context.Context, originalURL string, userID int
 	return shortURL, nil
 }
 
+// ProcessURLBatch - сохранение массива ссылок, возвращает ключ и короткую ссылку
 func (s *Service) ProcessURLBatch(ctx context.Context, originalURLs []model.URLToShortBatchRequest, userID int) ([]model.ShortToURLBatchResponse, error) {
 	var soURLs []model.KeyOriginalURL
 	var results []model.ShortToURLBatchResponse
@@ -96,6 +101,7 @@ func (s *Service) ProcessURLBatch(ctx context.Context, originalURLs []model.URLT
 	return results, nil
 }
 
+// DeleteURLBatch - удаление массива ссылок для пользователя
 func (s *Service) DeleteURLBatch(userID int, shortURLs []string) {
 	shortURLUser := model.ShortURLUserID{ShortURLs: shortURLs, UserID: userID}
 	model.ShortURLchan <- shortURLUser
