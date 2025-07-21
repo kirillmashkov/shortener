@@ -88,6 +88,7 @@ func (storeMap *StoreURLMap) AddURL(ctx context.Context, url string, keyURL stri
 	return nil
 }
 
+// AddBatchURL - сохранение массива ссылок
 func (storeMap *StoreURLMap) AddBatchURL(ctx context.Context, shortOriginalURL []model.KeyOriginalURL, userID int) error {
 	storeMap.mu.Lock()
 	defer storeMap.mu.Unlock()
