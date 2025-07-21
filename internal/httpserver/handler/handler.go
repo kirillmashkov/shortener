@@ -16,7 +16,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// ServiceShortURL - интерфейс для управления ссылками 
+// ServiceShortURL - интерфейс для управления ссылками
 type ServiceShortURL interface {
 	GetShortURL(ctx context.Context, originalURL *url.URL) (string, bool, bool)
 	ProcessURL(ctx context.Context, originalURL string, userID int) (string, error)

@@ -63,7 +63,7 @@ func (s *Service) GetAllURL(ctx context.Context, userID int) ([]model.ShortOrigi
 	return result, nil
 }
 
- // ProcessURL - сохраняет исходную ссылку, возвращает короткую ссылку
+// ProcessURL - сохраняет исходную ссылку, возвращает короткую ссылку
 func (s *Service) ProcessURL(ctx context.Context, originalURL string, userID int) (string, error) {
 	keyURL := s.keyURL()
 	shortURL := s.shortURL(keyURL)
