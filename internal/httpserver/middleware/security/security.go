@@ -24,6 +24,7 @@ type UserIDType string
 const tokenExp = time.Hour * 3
 const secretKey = "supersecretkey"
 
+// Auth - middleware для получения токена из заголовков. Если токена нет, выдает его и записывает в контекст запроса
 func Auth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.Contains(r.URL.Path, "debug") {

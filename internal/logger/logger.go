@@ -9,6 +9,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// Settings - настройки логера
 type Settings struct {
 	Logger struct {
 		Level             string   `yaml:"level"`
@@ -23,6 +24,7 @@ type Settings struct {
 
 const filenameConfig = "config/config.yml"
 
+// Initialize - инициализация логера
 func Initialize() error {
 	encoderCfg := zap.NewProductionEncoderConfig()
 	encoderCfg.TimeKey = "timestamp"

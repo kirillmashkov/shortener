@@ -22,12 +22,14 @@ type storeURL interface {
 	GetShortURL(ctx context.Context, originalURL string) (string, error)
 }
 
+// Service - тип для сервисного слоя по управлению ссылками
 type Service struct {
 	storage storeURL
 	cfg     config.ServerConfig
 	log     *zap.Logger
 }
 
+// New - конструктор
 func New(storage storeURL, config config.ServerConfig, log *zap.Logger) *Service {
 	return &Service{storage: storage, cfg: config, log: log}
 }

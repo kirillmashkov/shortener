@@ -12,6 +12,7 @@ import (
 	"net/http/pprof"
 )
 
+// Serv - роутер REST запросов
 func Serv() http.Handler {
 	r := chi.NewRouter()
 	r.Use(logger.Logger)

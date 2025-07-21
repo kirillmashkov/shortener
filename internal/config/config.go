@@ -6,6 +6,7 @@ import (
 	"go.uber.org/zap"
 )
 
+// ServerConfig - тип для хранения конфигурации приложения
 type ServerConfig struct {
 	Host        string "env:\"SERVER_ADDRESS\""
 	Redirect    string "env:\"BASE_URL\""
@@ -13,7 +14,10 @@ type ServerConfig struct {
 	Connection  string "env:\"DATABASE_DSN\""
 }
 
+// ServerEnv - хранение значений, полученных из переменных среды
 var ServerEnv ServerConfig
+
+// ServerArg - хранение значений, полученных из командной строки
 var ServerArg ServerConfig
 
 func init() {
@@ -23,6 +27,7 @@ func init() {
 	flag.StringVar(&ServerArg.Connection, "d", "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable", "db connection string")
 }
 
+// InitServerConf - определение итоговой конфигурации приложения
 func InitServerConf(conf *ServerConfig, logger *zap.Logger) {
 	err := env.Parse(&ServerEnv)
 	if err != nil {

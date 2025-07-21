@@ -14,19 +14,23 @@ type compressWriter struct {
 	zw *gzip.Writer
 }
 
+// Header - получение заголовков
 func (c *compressWriter) Header() http.Header {
 	return c.w.Header()
 }
 
+// Write - запись payload
 func (c *compressWriter) Write(payload []byte) (int, error) {
 	return c.zw.Write(payload)
 }
 
+// WriteHeader - запись заголовков
 func (c *compressWriter) WriteHeader(statusCode int) {
 	c.w.Header().Set("Content-Encoding", "gzip")
 	c.w.WriteHeader(statusCode)
 }
 
+// Close - закрытие writer
 func (c *compressWriter) Close() error {
 	return c.zw.Close()
 }
@@ -55,10 +59,12 @@ func newCompressReader(r io.ReadCloser) (*compressReader, error) {
 	}, nil
 }
 
+// Read - чтение
 func (c *compressReader) Read(p []byte) (n int, err error) {
 	return c.zr.Read(p)
 }
 
+// Close - закрытие reader
 func (c *compressReader) Close() error {
 	err := c.r.Close()
 	if err != nil {
@@ -67,6 +73,7 @@ func (c *compressReader) Close() error {
 	return c.zr.Close()
 }
 
+// Compress - обертка над writer для сжатия контента. В зависимости от наличия заголовков сжатие применяется или нет
 func Compress(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if strings.Contains(r.URL.Path, "debug") {

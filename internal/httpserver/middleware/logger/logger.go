@@ -8,12 +8,14 @@ import (
 	"time"
 )
 
+// ResponseWrapper - интерфейс для для получения статуса и кол-ва записанныъ байт
 type ResponseWrapper interface {
 	http.ResponseWriter
 	Status() int
 	Bytes() int
 }
 
+// Logger - перехватчик запросов для логирования статуса и кол-ва записанных байт
 func Logger(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		t1 := time.Now()
