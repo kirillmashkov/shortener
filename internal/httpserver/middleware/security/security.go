@@ -14,11 +14,13 @@ import (
 	"go.uber.org/zap"
 )
 
+// Claims - хранилище данных в токене
 type Claims struct {
 	jwt.RegisteredClaims
 	UserID int
 }
 
+// UserIDType - тип для сохранения в контексте запроса id пользователя
 type UserIDType string
 
 const tokenExp = time.Hour * 3
