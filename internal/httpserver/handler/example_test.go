@@ -15,8 +15,7 @@ func ExamplePostHandler() {
 	err := app.Initialize()
 	if err != nil {
 		log.SetPrefix("ERROR")
-		log.Println("Can't initialize app")
-		return
+		log.Fatal("Can't initialize app", err)
 	}
 
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)

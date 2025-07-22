@@ -10,44 +10,46 @@ import (
 	"testing"
 
 	"github.com/kirillmashkov/shortener.git/internal/config"
-	"github.com/kirillmashkov/shortener.git/internal/storage/database"
 	"github.com/kirillmashkov/shortener.git/internal/storage/memory"
 	"go.uber.org/zap"
 )
 
-var ServerConf config.ServerConfig
-var Log *zap.Logger = zap.NewNop()
-var Database *database.Database
-var RepositoryShortURL *database.RepositoryShortURL
-var ServiceShort *Service
-var Storage *memory.StoreURLMap
-
 const originalURLPrefix = "http://www.yandex.ru/"
 
-func Init() {
-	config.InitServerConf(&ServerConf, Log)
+func Init(log *zap.Logger, b *testing.B) (*Service, error) {
+	b.Helper()
 
-	Storage, err := memory.New(&ServerConf, Log, &ServerConf)
+	var ServerConf config.ServerConfig
+	
+	config.InitServerConf(&ServerConf, log)
+
+	Storage, err := memory.New(&ServerConf, log, &ServerConf)
 	if err != nil {
-		Log.Error("Error init memory storage", zap.Error(err))
-		panic(err)
+		return nil, err
 	}
-	ServiceShort = New(Storage, ServerConf, Log)
+	return New(Storage, ServerConf, log), nil
 }
 
-func changeWorkingDir() {
+func changeWorkingDir(log *zap.Logger, b *testing.B) error {
+	b.Helper()
+
 	_, filename, _, _ := runtime.Caller(0)
 	dir := path.Join(path.Dir(filename), "../../")
 	err := os.Chdir(dir)
-	if err != nil {
-		Log.Error("Error change working dir", zap.Error(err))
-		panic(err)
-	}
+	return err
 }
 
 func BenchmarkPostHandler(b *testing.B) {
-	changeWorkingDir()
-	Init()
+	var logger *zap.Logger = zap.NewNop()
+
+	if err := changeWorkingDir(logger, b); err != nil {
+		b.Error("Error change working dir", err)
+	}
+
+	ServiceShort, err := Init(logger, b)
+	if err != nil {
+		b.Error("Error init memory storage", err)
+	}
 
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 
@@ -55,5 +57,4 @@ func BenchmarkPostHandler(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		ServiceShort.ProcessURL(b.Context(), originalURLPrefix+strconv.Itoa(rand.IntN(100000)), 1)
 	}
-
 }
