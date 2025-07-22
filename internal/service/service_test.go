@@ -20,7 +20,7 @@ func Init(log *zap.Logger, b *testing.B) (*Service, error) {
 	b.Helper()
 
 	var ServerConf config.ServerConfig
-	
+
 	config.InitServerConf(&ServerConf, log)
 
 	Storage, err := memory.New(&ServerConf, log, &ServerConf)
@@ -40,7 +40,7 @@ func changeWorkingDir(log *zap.Logger, b *testing.B) error {
 }
 
 func BenchmarkPostHandler(b *testing.B) {
-	var logger *zap.Logger = zap.NewNop()
+	var logger = zap.NewNop()
 
 	if err := changeWorkingDir(logger, b); err != nil {
 		b.Error("Error change working dir", err)
