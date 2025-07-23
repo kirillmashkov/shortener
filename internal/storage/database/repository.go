@@ -13,6 +13,7 @@ import (
 	"go.uber.org/zap"
 )
 
+// RepositoryShortURL - слой доступа к БД, работа с подсхемой БД для управления ссылками
 type RepositoryShortURL struct {
 	db  *Database
 	log *zap.Logger
@@ -20,10 +21,12 @@ type RepositoryShortURL struct {
 
 const timeoutOperationDB = 1 * time.Second
 
+// NewRepositoryShortURL - конструктор
 func NewRepositoryShortURL(db *Database, log *zap.Logger) *RepositoryShortURL {
 	return &RepositoryShortURL{db: db, log: log}
 }
 
+// AddURL - сохранение ссылки
 func (r *RepositoryShortURL) AddURL(ctx context.Context, url string, keyURL string, userID int) error {
 	ctx, cancel := context.WithTimeout(ctx, timeoutOperationDB)
 	defer cancel()
@@ -60,6 +63,7 @@ func (r *RepositoryShortURL) AddURL(ctx context.Context, url string, keyURL stri
 	return nil
 }
 
+// AddBatchURL - сохранение множества ссылок
 func (r *RepositoryShortURL) AddBatchURL(ctx context.Context, shortOriginalURL []model.KeyOriginalURL, userID int) error {
 	ctx, cancel := context.WithTimeout(ctx, timeoutOperationDB)
 	defer cancel()
@@ -119,16 +123,17 @@ func (r *RepositoryShortURL) deleteURLBatch(shortURL []string, userID int) {
 	}
 
 	res := tx.SendBatch(ctx, batch)
-	
+
 	errClose := res.Close()
 	if errClose != nil {
 		r.log.Error("Error close batch delete short url", zap.Error(err))
 	}
 }
 
+// DeleteURLBatchProcessor - удаление множества ссылок
 func (r *RepositoryShortURL) DeleteURLBatchProcessor() {
 	defer model.Wg.Done()
-	
+
 	for s := range model.ShortURLchan {
 		r.deleteURLBatch(s.ShortURLs, s.UserID)
 	}
@@ -147,6 +152,7 @@ func (r *RepositoryShortURL) insertShortURL(ctx context.Context, tx pgx.Tx, keyU
 	return nil
 }
 
+// GetURL - получение исходной ссылки
 func (r *RepositoryShortURL) GetURL(ctx context.Context, keyURL string) (string, bool, bool) {
 	ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
 	defer cancel()
@@ -162,6 +168,7 @@ func (r *RepositoryShortURL) GetURL(ctx context.Context, keyURL string) (string,
 	return originalURL, deleted, true
 }
 
+// GetShortURL - получение короткой ссылки
 func (r *RepositoryShortURL) GetShortURL(ctx context.Context, originalURL string) (string, error) {
 	ctx, cancel := context.WithTimeout(ctx, timeoutOperationDB)
 	defer cancel()
@@ -175,6 +182,7 @@ func (r *RepositoryShortURL) GetShortURL(ctx context.Context, originalURL string
 	return key, nil
 }
 
+// GetAllURL - получение всех ссылок в рамках пользователя
 func (r *RepositoryShortURL) GetAllURL(ctx context.Context, userID int) ([]model.KeyOriginalURL, error) {
 	ctx, cancel := context.WithTimeout(ctx, timeoutOperationDB)
 	defer cancel()

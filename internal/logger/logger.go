@@ -9,25 +9,26 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// Settings - настройки логера
 type Settings struct {
 	Logger struct {
-		Level string `yaml:"level"`
-		Development bool `yaml:"development"`
-		DisableCaller bool `yaml:"disable-caller"`
-		DisableStacktrace bool `yaml:"disable-stacktracce"`
-		Encoding string `yaml:"encoding"`
-		OutputPaths []string `yaml:"output-paths"`
-		ErrorOutputPaths []string `yaml:"error-output-paths"`
-
+		Level             string   `yaml:"level"`
+		Development       bool     `yaml:"development"`
+		DisableCaller     bool     `yaml:"disable-caller"`
+		DisableStacktrace bool     `yaml:"disable-stacktracce"`
+		Encoding          string   `yaml:"encoding"`
+		OutputPaths       []string `yaml:"output-paths"`
+		ErrorOutputPaths  []string `yaml:"error-output-paths"`
 	} `yaml:"logger"`
 }
 
-const filenameConfig = "config/config.yml" 
+const filenameConfig = "config/config.yml"
 
+// Initialize - инициализация логера
 func Initialize() error {
 	encoderCfg := zap.NewProductionEncoderConfig()
-    encoderCfg.TimeKey = "timestamp"
-    encoderCfg.EncodeTime = zapcore.ISO8601TimeEncoder
+	encoderCfg.TimeKey = "timestamp"
+	encoderCfg.EncodeTime = zapcore.ISO8601TimeEncoder
 
 	data, err := os.ReadFile(filenameConfig)
 	if err != nil {
@@ -40,21 +41,21 @@ func Initialize() error {
 		return err
 	}
 
-    config := zap.Config{
-        Level:             	zap.NewAtomicLevelAt(getLevelLogger(settings.Logger.Level)),
-        Development:       	settings.Logger.Development,
-        DisableCaller:     	settings.Logger.DisableCaller,
-        DisableStacktrace: 	settings.Logger.DisableStacktrace,
-        Sampling:          	nil,
-        Encoding:          	settings.Logger.Encoding,
-        EncoderConfig:     	encoderCfg,
-        OutputPaths: 		settings.Logger.OutputPaths,
-        ErrorOutputPaths: 	settings.Logger.ErrorOutputPaths,
-        InitialFields: map[string]interface{}{
-            "pid": os.Getpid(),
-        },
-    }
-	app.Log = zap.Must(config.Build()) 
+	config := zap.Config{
+		Level:             zap.NewAtomicLevelAt(getLevelLogger(settings.Logger.Level)),
+		Development:       settings.Logger.Development,
+		DisableCaller:     settings.Logger.DisableCaller,
+		DisableStacktrace: settings.Logger.DisableStacktrace,
+		Sampling:          nil,
+		Encoding:          settings.Logger.Encoding,
+		EncoderConfig:     encoderCfg,
+		OutputPaths:       settings.Logger.OutputPaths,
+		ErrorOutputPaths:  settings.Logger.ErrorOutputPaths,
+		InitialFields: map[string]interface{}{
+			"pid": os.Getpid(),
+		},
+	}
+	app.Log = zap.Must(config.Build())
 	return nil
 }
 

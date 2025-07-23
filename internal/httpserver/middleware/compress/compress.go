@@ -10,55 +10,61 @@ import (
 )
 
 type compressWriter struct {
-    w  http.ResponseWriter
-    zw *gzip.Writer
+	w  http.ResponseWriter
+	zw *gzip.Writer
 }
 
+// Header - получение заголовков
 func (c *compressWriter) Header() http.Header {
 	return c.w.Header()
 }
 
+// Write - запись payload
 func (c *compressWriter) Write(payload []byte) (int, error) {
 	return c.zw.Write(payload)
 }
 
+// WriteHeader - запись заголовков
 func (c *compressWriter) WriteHeader(statusCode int) {
 	c.w.Header().Set("Content-Encoding", "gzip")
 	c.w.WriteHeader(statusCode)
 }
 
+// Close - закрытие writer
 func (c *compressWriter) Close() error {
 	return c.zw.Close()
 }
 
 func newCompressWriter(w http.ResponseWriter) *compressWriter {
 	return &compressWriter{
-		w: w,
+		w:  w,
 		zw: gzip.NewWriter(w),
 	}
 }
 
 type compressReader struct {
-	r io.ReadCloser
+	r  io.ReadCloser
 	zr *gzip.Reader
 }
 
-func newCompressReader(r io.ReadCloser) (*compressReader, error){
+func newCompressReader(r io.ReadCloser) (*compressReader, error) {
 	zr, err := gzip.NewReader(r)
 	if err != nil {
 		return nil, err
 	}
 
 	return &compressReader{
-		r: r,
+		r:  r,
 		zr: zr,
 	}, nil
 }
 
+// Read - чтение
 func (c *compressReader) Read(p []byte) (n int, err error) {
 	return c.zr.Read(p)
 }
 
+// Close - закрытие reader
 func (c *compressReader) Close() error {
 	err := c.r.Close()
 	if err != nil {
@@ -67,8 +73,14 @@ func (c *compressReader) Close() error {
 	return c.zr.Close()
 }
 
+// Compress - обертка над writer для сжатия контента. В зависимости от наличия заголовков сжатие применяется или нет
 func Compress(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.Contains(r.URL.Path, "debug") {
+			next.ServeHTTP(w, r)
+			return
+		}
+
 		resultWriter := w
 		acceptEncoding := r.Header.Get("Accept-Encoding")
 		supportGzip := strings.Contains(acceptEncoding, "gzip")
@@ -79,7 +91,7 @@ func Compress(next http.Handler) http.Handler {
 				if errClose := compressWriter.Close(); errClose != nil {
 					app.Log.Error("Can't close writer when compress")
 				}
-			} ()
+			}()
 		}
 
 		contentEncoding := r.Header.Get("Content-Encoding")

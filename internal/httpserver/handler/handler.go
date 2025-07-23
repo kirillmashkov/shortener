@@ -16,6 +16,7 @@ import (
 	"go.uber.org/zap"
 )
 
+// ServiceShortURL - интерфейс для управления ссылками
 type ServiceShortURL interface {
 	GetShortURL(ctx context.Context, originalURL *url.URL) (string, bool, bool)
 	ProcessURL(ctx context.Context, originalURL string, userID int) (string, error)
@@ -24,6 +25,7 @@ type ServiceShortURL interface {
 	GetAllURL(ctx context.Context, userID int) ([]model.ShortOriginalURL, error)
 }
 
+// GetHandler - обработчик REST запроса на получение обычной ссылки по короткой
 func GetHandler(res http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodGet {
 		http.Error(res, "Only GET requests are allowed!", http.StatusBadRequest)
@@ -45,6 +47,7 @@ func GetHandler(res http.ResponseWriter, req *http.Request) {
 	http.Redirect(res, req, url, http.StatusTemporaryRedirect)
 }
 
+// GetAllURL - обработчик REST запроса на получение всех ссылок
 func GetAllURL(res http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodGet {
 		http.Error(res, "Only GET requests are allowed!", http.StatusBadRequest)
@@ -73,6 +76,7 @@ func GetAllURL(res http.ResponseWriter, req *http.Request) {
 	}
 }
 
+// PostHandler - обработчик REST запроса на сохранение обычной ссылки. Возвращает короткую ссылку
 func PostHandler(res http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodPost {
 		http.Error(res, "Only POST requests are allowed!", http.StatusBadRequest)
@@ -86,12 +90,12 @@ func PostHandler(res http.ResponseWriter, req *http.Request) {
 	}
 
 	u := security.UserIDType("userID")
-	
+
 	shortURL, err := app.Service.ProcessURL(req.Context(), string(originalURL), req.Context().Value(u).(int))
 	res.Header().Set("content-type", "text/plain")
 	if err != nil {
 		errorString := fmt.Sprintf("Something went wrong when generate short url for %s", string(originalURL))
-		if errors.Is(err,model.ErrDuplicateURL) {
+		if errors.Is(err, model.ErrDuplicateURL) {
 			res.WriteHeader(http.StatusConflict)
 			_, err = res.Write([]byte(shortURL))
 			if err != nil {
@@ -114,6 +118,7 @@ func PostHandler(res http.ResponseWriter, req *http.Request) {
 	}
 }
 
+// PostGenerateShortURL - обработчик REST запроса, сохранение обычной ссылки и возврат соответстующей короткой
 func PostGenerateShortURL(res http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodPost {
 		http.Error(res, "Only POST requests are allowed!", http.StatusBadRequest)
@@ -160,6 +165,7 @@ func PostGenerateShortURL(res http.ResponseWriter, req *http.Request) {
 	}
 }
 
+// PostGenerateShortURLBatch - обработчик REST запроса, сохранение массива обычных URL, взамен возвращает массив коротких ссылок
 func PostGenerateShortURLBatch(res http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodPost {
 		http.Error(res, "Only POST requests are allowed!", http.StatusBadRequest)
@@ -190,6 +196,7 @@ func PostGenerateShortURLBatch(res http.ResponseWriter, req *http.Request) {
 	}
 }
 
+// DeleteURLBatch - обработчик REST запроса, удаление массива ссылок для пользователя
 func DeleteURLBatch(res http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodDelete {
 		http.Error(res, "Only Delete requests are allowed!", http.StatusBadRequest)
@@ -209,6 +216,7 @@ func DeleteURLBatch(res http.ResponseWriter, req *http.Request) {
 	res.WriteHeader(http.StatusAccepted)
 }
 
+// Ping - обработчик REST запроса, проверка доступности БД
 func Ping(res http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodGet {
 		http.Error(res, "Only GET requests are allowed!", http.StatusBadRequest)

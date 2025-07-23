@@ -14,6 +14,7 @@ import (
 	"go.uber.org/zap"
 )
 
+// StoreURLMap - доступ к хранения в памяти ссылок
 type StoreURLMap struct {
 	mu     sync.RWMutex
 	urls   map[string]string
@@ -21,12 +22,14 @@ type StoreURLMap struct {
 	cfg    *config.ServerConfig
 }
 
+// StoreFile - json для сохранения ссылок в файл
 type StoreFile struct {
 	UUID        string `json:"uuid"`
 	ShortURL    string `json:"short_url"`
 	OriginalURL string `json:"original_url"`
 }
 
+// New - конструктор
 func New(conf *config.ServerConfig, logger *zap.Logger, config *config.ServerConfig) (*StoreURLMap, error) {
 	urls := map[string]string{}
 
@@ -70,6 +73,7 @@ func New(conf *config.ServerConfig, logger *zap.Logger, config *config.ServerCon
 	}, nil
 }
 
+// AddURL - сохранение ссылки
 func (storeMap *StoreURLMap) AddURL(ctx context.Context, url string, keyURL string, userID int) error {
 	storeMap.mu.Lock()
 	defer storeMap.mu.Unlock()
@@ -84,6 +88,7 @@ func (storeMap *StoreURLMap) AddURL(ctx context.Context, url string, keyURL stri
 	return nil
 }
 
+// AddBatchURL - сохранение массива ссылок
 func (storeMap *StoreURLMap) AddBatchURL(ctx context.Context, shortOriginalURL []model.KeyOriginalURL, userID int) error {
 	storeMap.mu.Lock()
 	defer storeMap.mu.Unlock()
@@ -100,6 +105,7 @@ func (storeMap *StoreURLMap) AddBatchURL(ctx context.Context, shortOriginalURL [
 	return nil
 }
 
+// GetURL - получение ссылки
 func (storeMap *StoreURLMap) GetURL(ctx context.Context, keyURL string) (string, bool, bool) {
 	storeMap.mu.RLock()
 	url, exist := storeMap.urls[keyURL]
@@ -107,6 +113,7 @@ func (storeMap *StoreURLMap) GetURL(ctx context.Context, keyURL string) (string,
 	return url, false, exist
 }
 
+// GetAllURL - получение всех ссылок
 func (storeMap *StoreURLMap) GetAllURL(ctx context.Context, userID int) ([]model.KeyOriginalURL, error) {
 	storeMap.mu.Lock()
 	defer storeMap.mu.Unlock()
@@ -118,10 +125,12 @@ func (storeMap *StoreURLMap) GetAllURL(ctx context.Context, userID int) ([]model
 	return res, nil
 }
 
+// GetShortURL - реализация отсутствует
 func (storeMap *StoreURLMap) GetShortURL(ctx context.Context, originalURL string) (string, error) {
 	return "", errors.New("unsupport operation")
 }
 
+// DeleteURLBatchProcessor - реализация отсутствует
 func (storeMap *StoreURLMap) DeleteURLBatchProcessor() {
 	storeMap.logger.Error("unsupport operation")
 }

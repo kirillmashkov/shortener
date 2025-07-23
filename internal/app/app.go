@@ -1,3 +1,4 @@
+// Модуль инициализации, содержит общие переменные и их инициализацию
 package app
 
 import (
@@ -11,17 +12,28 @@ import (
 	"go.uber.org/zap"
 )
 
+// ServerConf - конфигурация приложения
 var ServerConf config.ServerConfig
 
+// Storage - управление хранением ссылок в памяти
 var Storage *memory.StoreURLMap
+
+// Service - управление ссылками
 var Service *service.Service
+
+// ServiceUtils - утильные функции
 var ServiceUtils *service.ServiceUtils
 
+// Database - управление подключением и миграцией в БД
 var Database *database.Database
+
+// RepositoryShortURL - управление хранением ссылок в БД
 var RepositoryShortURL *database.RepositoryShortURL
 
+// Log - логер
 var Log *zap.Logger = zap.NewNop()
 
+// Initialize - инициализация приложения
 func Initialize() error {
 	var err error
 
@@ -54,6 +66,7 @@ func Initialize() error {
 	return nil
 }
 
+// Close - закрытие приложения
 func Close() {
 
 	errClose := Database.Close()

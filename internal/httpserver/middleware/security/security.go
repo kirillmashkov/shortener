@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"math/rand"
+	"strings"
 	"time"
 
 	"github.com/golang-jwt/jwt/v4"
@@ -13,25 +14,33 @@ import (
 	"go.uber.org/zap"
 )
 
+// Claims - хранилище данных в токене
 type Claims struct {
 	jwt.RegisteredClaims
 	UserID int
 }
 
+// UserIDType - тип для сохранения в контексте запроса id пользователя
 type UserIDType string
 
 const tokenExp = time.Hour * 3
 const secretKey = "supersecretkey"
 
+// Auth - middleware для получения токена из заголовков. Если токена нет, выдает его и записывает в контекст запроса
 func Auth(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.Contains(r.URL.Path, "debug") {
+			next.ServeHTTP(w, r)
+			return
+		}
+
 		cookie, err := r.Cookie("token")
 
 		if err != nil {
 			cookie = nil
 		}
 
-		jwtToken, userID, err := getJWT(cookie)
+		jwtToken, userID, err, newToken := getJWT(cookie)
 		if err != nil {
 			app.Log.Error("Error get token", zap.Error(err))
 			http.Error(w, "Something went wrong", http.StatusBadRequest)
@@ -41,25 +50,29 @@ func Auth(next http.Handler) http.Handler {
 		u := UserIDType("userID")
 		c := context.WithValue(r.Context(), u, userID)
 
-		resCookie := http.Cookie{Name: "token", Value: jwtToken}
-		http.SetCookie(w, &resCookie)
+		if newToken {
+			resCookie := http.Cookie{Name: "token", Value: jwtToken}
+			http.SetCookie(w, &resCookie)
+		}
 
 		next.ServeHTTP(w, r.WithContext(c))
 	})
 }
 
-func getJWT(cookie *http.Cookie) (string, int, error) {
+func getJWT(cookie *http.Cookie) (string, int, error, bool) {
 	if cookie == nil {
-		return buildJWTString()
+		tokenString, userID, err := buildJWTString()
+		return tokenString, userID, err, true
 	}
 
 	checkJWT, userID := сheckJWT(cookie)
 
 	if checkJWT {
-		return cookie.Value, userID, nil
+		return cookie.Value, userID, nil, false
 	}
 
-	return buildJWTString()
+	tokenString, userID, err := buildJWTString()
+	return tokenString, userID, err, true
 }
 
 func buildJWTString() (string, int, error) {
