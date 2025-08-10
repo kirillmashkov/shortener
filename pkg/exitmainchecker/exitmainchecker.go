@@ -8,15 +8,14 @@ import (
 )
 
 var ErrExitMainCheckAnalyzer = &analysis.Analyzer{
-    Name: "exitmaincheck",
-    Doc:  "check call exit from main func",
-    Run:  run,
+	Name: "exitmaincheck",
+	Doc:  "check call exit from main func",
+	Run:  run,
 }
 
 func run(pass *analysis.Pass) (interface{}, error) {
 	for _, file := range pass.Files {
 
-		
 		if fullPath := pass.Fset.Position(file.Pos()).String(); strings.Contains(fullPath, "go-build") {
 			continue
 		}
