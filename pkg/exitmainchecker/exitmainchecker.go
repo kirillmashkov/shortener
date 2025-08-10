@@ -1,3 +1,4 @@
+// Анализатор, запрещающий использовать прямой вызов os.Exit в функции main пакет main
 package exitmainchecker
 
 import (
@@ -7,6 +8,7 @@ import (
 	"golang.org/x/tools/go/analysis"
 )
 
+// ErrExitMainCheckAnalyzer для использования в анализаторе
 var ErrExitMainCheckAnalyzer = &analysis.Analyzer{
 	Name: "exitmaincheck",
 	Doc:  "check call exit from main func",
