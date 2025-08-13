@@ -33,8 +33,8 @@ import (
 	"honnef.co/go/tools/staticcheck"
 )
 
-func main() {
-	checks := []*analysis.Analyzer{
+var checks = func() []*analysis.Analyzer {
+	analyzers := []any{
 		printf.Analyzer,
 		shadow.Analyzer,
 		structtag.Analyzer,
@@ -59,20 +59,27 @@ func main() {
 		unsafeptr.Analyzer,
 		unusedresult.Analyzer,
 		unusedwrite.Analyzer,
-		exitmainchecker.ErrExitMainCheckAnalyzer,
+		exitmainchecker.Analyzer,
+		staticcheck.Analyzers,
+		quickfix.Analyzers,
+		simple.Analyzers,
 	}
-
-	for _, v := range staticcheck.Analyzers {
-		checks = append(checks, v.Analyzer)
+	var checks []*analysis.Analyzer
+	for _, item := range analyzers {
+		switch v := item.(type) {
+		case *analysis.Analyzer:
+			checks = append(checks, v)
+		case []*analysis.Analyzer:
+			checks = append(checks, v...)
+		case []analysis.Analyzer:
+			for i := range v {
+				checks = append(checks, &v[i])
+			}
+		}
 	}
+	return checks
+}()
 
-	for _, v := range quickfix.Analyzers {
-		checks = append(checks, v.Analyzer)
-	}
-
-	for _, v := range simple.Analyzers {
-		checks = append(checks, v.Analyzer)
-	}
-
+func main() {
 	multichecker.Main(checks...)
 }
