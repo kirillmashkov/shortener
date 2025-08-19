@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"golang.org/x/crypto/acme/autocert"
 
 	"github.com/kirillmashkov/shortener.git/internal/app"
 	"github.com/kirillmashkov/shortener.git/internal/httpserver/router"
@@ -41,7 +42,23 @@ func main() {
 
 	defer app.Close()
 
-	err = http.ListenAndServe(app.ServerConf.Host, router.Serv())
+	if app.ServerConf.EnableHttps {
+		manager := &autocert.Manager {
+			Cache:      autocert.DirCache("cache-dir"),
+			Prompt:     autocert.AcceptTOS,
+			HostPolicy: autocert.HostWhitelist("mysite.ru", "www.mysite.ru"),
+		}
+		
+		server := &http.Server {
+			Addr:      app.ServerConf.Host,
+			Handler:   router.Serv(),
+			TLSConfig: manager.TLSConfig(),
+		}
+    	server.ListenAndServeTLS("", "")
+	} else {
+		err = http.ListenAndServe(app.ServerConf.Host, router.Serv())
+	}
+
 	if err != nil {
 		panic(err)
 	}
