@@ -2,6 +2,7 @@ package config
 
 import (
 	"flag"
+
 	"github.com/caarlos0/env/v6"
 	"go.uber.org/zap"
 )
@@ -12,7 +13,7 @@ type ServerConfig struct {
 	Redirect    string "env:\"BASE_URL\""
 	FileStorage string "env:\"FILE_STORAGE_PATH\""
 	Connection  string "env:\"DATABASE_DSN\""
-	EnableHttps bool "env:\"ENABLE_HTTPS\""
+	EnableHTTPS bool   "env:\"ENABLE_HTTPS\""
 }
 
 // ServerEnv - хранение значений, полученных из переменных среды
@@ -26,9 +27,8 @@ func init() {
 	flag.StringVar(&ServerArg.Redirect, "b", "http://localhost:8080", "server redirect")
 	flag.StringVar(&ServerArg.FileStorage, "f", "short_url_storage.txt", "file storage short url")
 	flag.StringVar(&ServerArg.Connection, "d", "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable", "db connection string")
-	flag.BoolVar(&ServerArg.EnableHttps, "s", false, "run server with https")
+	flag.BoolVar(&ServerArg.EnableHTTPS, "s", false, "run server with https")
 }
-
 
 // InitServerConf - определение итоговой конфигурации приложения
 func InitServerConf(conf *ServerConfig, logger *zap.Logger) {
@@ -41,7 +41,7 @@ func InitServerConf(conf *ServerConfig, logger *zap.Logger) {
 	conf.Host = getConfigString(ServerEnv.Host, ServerArg.Host)
 	conf.FileStorage = getConfigString(ServerEnv.FileStorage, ServerArg.FileStorage)
 	conf.Connection = getConfigString(ServerEnv.Connection, ServerArg.Connection)
-	conf.EnableHttps = getConfigBool(ServerEnv.EnableHttps, ServerArg.EnableHttps)
+	conf.EnableHTTPS = getConfigBool(ServerEnv.EnableHTTPS, ServerArg.EnableHTTPS)
 
 	logger.Info("server config",
 		zap.String("host", conf.Host),
@@ -64,4 +64,3 @@ func getConfigBool(env bool, arg bool) bool {
 		return env
 	}
 }
-
