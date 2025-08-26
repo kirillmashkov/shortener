@@ -1,11 +1,23 @@
 package config
 
 import (
+	"encoding/json"
+	"errors"
 	"flag"
+	"os"
 
 	"github.com/caarlos0/env/v6"
 	"go.uber.org/zap"
 )
+
+// ConfigFromFile - тип для хранения конфигурации из файла
+type ConfigFromFile struct {
+	ServerAddress   string `json:"server_address"`
+	BaseURL         string `json:"base_url"`
+	FileStoragePath string `json:"file_storage_path"`
+	DatabaseDSN     string `json:"database_dsn"`
+	EnableHTTPS     bool   `json:"enable_https"`
+}
 
 // ServerConfig - тип для хранения конфигурации приложения
 type ServerConfig struct {
@@ -14,7 +26,10 @@ type ServerConfig struct {
 	FileStorage string "env:\"FILE_STORAGE_PATH\""
 	Connection  string "env:\"DATABASE_DSN\""
 	EnableHTTPS bool   "env:\"ENABLE_HTTPS\""
+	ConfigPath  string "env:\"CONFIG\""
 }
+
+const filenameConfigServer = "config/configserver.json"
 
 // ServerEnv - хранение значений, полученных из переменных среды
 var ServerEnv ServerConfig
@@ -28,6 +43,7 @@ func init() {
 	flag.StringVar(&ServerArg.FileStorage, "f", "short_url_storage.txt", "file storage short url")
 	flag.StringVar(&ServerArg.Connection, "d", "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable", "db connection string")
 	flag.BoolVar(&ServerArg.EnableHTTPS, "s", false, "run server with https")
+	flag.StringVar(&ServerArg.ConfigPath, "c", "", "config path")
 }
 
 // InitServerConf - определение итоговой конфигурации приложения
@@ -37,11 +53,15 @@ func InitServerConf(conf *ServerConfig, logger *zap.Logger) {
 		logger.Error("Can't read env variables")
 	}
 
-	conf.Redirect = getConfigString(ServerEnv.Redirect, ServerArg.Redirect)
-	conf.Host = getConfigString(ServerEnv.Host, ServerArg.Host)
-	conf.FileStorage = getConfigString(ServerEnv.FileStorage, ServerArg.FileStorage)
-	conf.Connection = getConfigString(ServerEnv.Connection, ServerArg.Connection)
-	conf.EnableHTTPS = getConfigBool(ServerEnv.EnableHTTPS, ServerArg.EnableHTTPS)
+	conf.ConfigPath = getConfigString(ServerEnv.ConfigPath, ServerArg.ConfigPath, filenameConfigServer)
+
+	configFromFile, err := parseConfigFile(conf.ConfigPath)
+
+	conf.Redirect = getConfigString(ServerEnv.Redirect, ServerArg.Redirect, configFromFile.BaseURL)
+	conf.Host = getConfigString(ServerEnv.Host, ServerArg.Host, configFromFile.ServerAddress)
+	conf.FileStorage = getConfigString(ServerEnv.FileStorage, ServerArg.FileStorage, configFromFile.FileStoragePath)
+	conf.Connection = getConfigString(ServerEnv.Connection, ServerArg.Connection, configFromFile.DatabaseDSN)
+	conf.EnableHTTPS = getConfigBool(ServerEnv.EnableHTTPS, ServerArg.EnableHTTPS, configFromFile.EnableHTTPS)
 
 	logger.Info("server config",
 		zap.String("host", conf.Host),
@@ -50,17 +70,46 @@ func InitServerConf(conf *ServerConfig, logger *zap.Logger) {
 		zap.String("db connection", conf.Connection))
 }
 
-func getConfigString(env string, arg string) string {
+func getConfigString(env string, arg string, fromFile string) string {
 	if env == "" {
-		return arg
+		if arg == "" {
+			return fromFile
+		} else {
+			return arg
+		}
 	} else {
 		return env
 	}
 }
-func getConfigBool(env bool, arg bool) bool {
+
+func getConfigBool(env bool, arg bool, fromFile bool) bool {
 	if !env {
-		return arg
+		if !arg {
+			return fromFile
+		} else {
+			return arg
+		}
 	} else {
 		return env
 	}
+}
+
+func parseConfigFile(path string) (ConfigFromFile, error) {
+	if path == "" {
+		return ConfigFromFile{}, nil
+	}
+
+	f, err := os.ReadFile(path)
+
+	if err != nil {
+		if os.IsNotExist(err) {
+			return ConfigFromFile{}, errors.New("Config file not found")
+		}
+		return ConfigFromFile{}, err
+	}
+
+	configFromFile := ConfigFromFile{}
+
+	err = json.Unmarshal(f, &configFromFile)
+	return configFromFile, err
 }
