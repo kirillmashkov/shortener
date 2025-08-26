@@ -58,12 +58,12 @@ func InitServerConf(conf *ServerConfig, logger *zap.Logger) {
 	var configFromFile *ConfigFromFile
 	configFromFile, err = parseConfigFile(conf.ConfigPath)
 	if err != nil {
-		configFromFile = &ConfigFromFile {
-			ServerAddress: "",
-			BaseURL: "",
+		configFromFile = &ConfigFromFile{
+			ServerAddress:   "",
+			BaseURL:         "",
 			FileStoragePath: "",
-			DatabaseDSN: "",
-			EnableHTTPS: false,
+			DatabaseDSN:     "",
+			EnableHTTPS:     false,
 		}
 	}
 
