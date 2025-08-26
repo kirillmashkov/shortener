@@ -55,7 +55,17 @@ func InitServerConf(conf *ServerConfig, logger *zap.Logger) {
 
 	conf.ConfigPath = getConfigString(ServerEnv.ConfigPath, ServerArg.ConfigPath, filenameConfigServer)
 
-	configFromFile, err := parseConfigFile(conf.ConfigPath)
+	var configFromFile *ConfigFromFile
+	configFromFile, err = parseConfigFile(conf.ConfigPath)
+	if err != nil {
+		configFromFile = &ConfigFromFile {
+			ServerAddress: "",
+			BaseURL: "",
+			FileStoragePath: "",
+			DatabaseDSN: "",
+			EnableHTTPS: false,
+		}
+	}
 
 	conf.Redirect = getConfigString(ServerEnv.Redirect, ServerArg.Redirect, configFromFile.BaseURL)
 	conf.Host = getConfigString(ServerEnv.Host, ServerArg.Host, configFromFile.ServerAddress)
@@ -94,22 +104,22 @@ func getConfigBool(env bool, arg bool, fromFile bool) bool {
 	}
 }
 
-func parseConfigFile(path string) (ConfigFromFile, error) {
+func parseConfigFile(path string) (*ConfigFromFile, error) {
 	if path == "" {
-		return ConfigFromFile{}, nil
+		return &ConfigFromFile{}, nil
 	}
 
 	f, err := os.ReadFile(path)
 
 	if err != nil {
 		if os.IsNotExist(err) {
-			return ConfigFromFile{}, errors.New("Config file not found")
+			return &ConfigFromFile{}, errors.New("config file not found")
 		}
-		return ConfigFromFile{}, err
+		return &ConfigFromFile{}, err
 	}
 
 	configFromFile := ConfigFromFile{}
 
 	err = json.Unmarshal(f, &configFromFile)
-	return configFromFile, err
+	return &configFromFile, err
 }
