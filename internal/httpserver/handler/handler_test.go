@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log"
@@ -38,7 +39,7 @@ func TestPostHandler(t *testing.T) {
 		},
 	}
 
-	err := app.Initialize()
+	err := app.Initialize(context.Background())
 	if err != nil {
 		log.SetPrefix("ERROR")
 		log.Println("Can't initialize app")

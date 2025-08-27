@@ -131,7 +131,7 @@ func (storeMap *StoreURLMap) GetShortURL(ctx context.Context, originalURL string
 }
 
 // DeleteURLBatchProcessor - реализация отсутствует
-func (storeMap *StoreURLMap) DeleteURLBatchProcessor() {
+func (storeMap *StoreURLMap) DeleteURLBatchProcessor(ctx context.Context) {
 	storeMap.logger.Error("unsupport operation")
 }
 
