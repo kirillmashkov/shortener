@@ -56,7 +56,6 @@ func main() {
 	model.Wg.Add(1)
 	go runServer(sigint, cancel)
 
-
 	if model.Wg != nil {
 		model.Wg.Wait()
 	}
