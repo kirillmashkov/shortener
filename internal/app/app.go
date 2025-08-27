@@ -39,6 +39,8 @@ func Initialize() error {
 
 	config.InitServerConf(&ServerConf, Log)
 
+	model.Wg = &sync.WaitGroup{}
+
 	Database = database.New(&ServerConf, Log)
 	err = Database.Open()
 	if err != nil {
@@ -55,8 +57,7 @@ func Initialize() error {
 		}
 		RepositoryShortURL = database.NewRepositoryShortURL(Database, Log)
 		Service = service.New(RepositoryShortURL, ServerConf, Log)
-
-		model.Wg = &sync.WaitGroup{}
+	
 		model.ShortURLchan = make(chan model.ShortURLUserID)
 		go RepositoryShortURL.DeleteURLBatchProcessor()
 	}

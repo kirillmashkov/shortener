@@ -51,6 +51,9 @@ func (d *Database) Open() error {
 
 // Close - закрытие соединения с БД
 func (d *Database) Close() error {
+	if d.conn == nil {
+		return nil
+	}
 	err := d.conn.Close(context.Background())
 	d.dbpool.Close()
 	return err
