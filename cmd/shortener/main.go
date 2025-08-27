@@ -56,13 +56,15 @@ func main() {
 	model.Wg.Add(1)
 	go runServer(sigint, cancel)
 
-	if model.ShortURLchan != nil {
-		close(model.ShortURLchan)
-	}
 
 	if model.Wg != nil {
 		model.Wg.Wait()
 	}
+
+	if model.ShortURLchan != nil {
+		close(model.ShortURLchan)
+	}
+
 }
 
 func runServer(sigint chan os.Signal, cancel context.CancelFunc) {
