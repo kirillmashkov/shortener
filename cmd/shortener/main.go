@@ -62,7 +62,6 @@ func main() {
 	}
 }
 
-// func runServer(ctx context.Context) {
 func runServer(sigint chan os.Signal) {
 	server := &http.Server {
 		Addr:      app.ServerConf.Host,
