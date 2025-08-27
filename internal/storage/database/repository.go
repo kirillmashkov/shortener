@@ -132,7 +132,7 @@ func (r *RepositoryShortURL) deleteURLBatch(shortURL []string, userID int) {
 
 // DeleteURLBatchProcessor - удаление множества ссылок
 func (r *RepositoryShortURL) DeleteURLBatchProcessor() {
-	// defer model.Wg.Done()
+	defer model.Wg.Done()
 
 	for s := range model.ShortURLchan {
 		r.deleteURLBatch(s.ShortURLs, s.UserID)

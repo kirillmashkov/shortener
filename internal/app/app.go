@@ -59,6 +59,7 @@ func Initialize() error {
 		Service = service.New(RepositoryShortURL, ServerConf, Log)
 	
 		model.ShortURLchan = make(chan model.ShortURLUserID)
+		model.Wg.Add(1)
 		go RepositoryShortURL.DeleteURLBatchProcessor()
 	}
 
