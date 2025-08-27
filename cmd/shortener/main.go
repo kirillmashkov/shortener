@@ -40,8 +40,11 @@ func main() {
 		panic(err)
 	}
 
+	ctx, cancel := context.WithCancel(context.Background())
+	// cancel will be called explicitly on server shutdown
+
 	flag.Parse()
-	err = app.Initialize()
+	err = app.Initialize(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -51,7 +54,7 @@ func main() {
 	signal.Notify(sigint, syscall.SIGINT, syscall.SIGTERM)
 
 	model.Wg.Add(1)
-	go runServer(sigint)
+	go runServer(sigint, cancel)
 
 	if model.ShortURLchan != nil {
 		close(model.ShortURLchan)
@@ -62,19 +65,21 @@ func main() {
 	}
 }
 
-func runServer(sigint chan os.Signal) {
-	server := &http.Server {
-		Addr:      app.ServerConf.Host,
-		Handler:   router.Serv(),
+func runServer(sigint chan os.Signal, cancel context.CancelFunc) {
+	server := &http.Server{
+		Addr:    app.ServerConf.Host,
+		Handler: router.Serv(),
 	}
 
 	go func() {
-		<- sigint
+		<-sigint
 		if errShutdown := server.Shutdown(context.Background()); errShutdown != nil {
 			app.Log.Error("error shutdown server")
 		} else {
 			app.Log.Info("server shutdown graceful")
 		}
+		// After HTTP server shutdown, cancel the main context:
+		cancel()
 		model.Wg.Done()
 	}()
 
