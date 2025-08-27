@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -12,7 +13,7 @@ import (
 )
 
 func ExamplePostHandler() {
-	err := app.Initialize()
+	err := app.Initialize(context.Background())
 	if err != nil {
 		log.SetPrefix("ERROR")
 		log.Fatal("Can't initialize app", err)
