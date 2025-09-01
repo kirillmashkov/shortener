@@ -131,11 +131,23 @@ func (r *RepositoryShortURL) deleteURLBatch(shortURL []string, userID int) {
 }
 
 // DeleteURLBatchProcessor - удаление множества ссылок
-func (r *RepositoryShortURL) DeleteURLBatchProcessor() {
+func (r *RepositoryShortURL) DeleteURLBatchProcessor(ctx context.Context) {
 	defer model.Wg.Done()
-
-	for s := range model.ShortURLchan {
-		r.deleteURLBatch(s.ShortURLs, s.UserID)
+	for {
+		select {
+		case <-ctx.Done():
+			r.log.Info("DeleteURLBatchProcessor: graceful shutdown")
+			return
+		case s, ok := <-model.ShortURLchan:
+			if !ok {
+				// Канал закрыт, ждём только завершения контекста
+				time.Sleep(100 * time.Millisecond)
+				continue
+			}
+			if s.ShortURLs != nil {
+				r.deleteURLBatch(s.ShortURLs, s.UserID)
+			}
+		}
 	}
 }
 

@@ -2,6 +2,7 @@
 package app
 
 import (
+	"context"
 	"sync"
 
 	"github.com/kirillmashkov/shortener.git/internal/config"
@@ -27,17 +28,19 @@ var ServiceUtils *service.ServiceUtils
 // Database - управление подключением и миграцией в БД
 var Database *database.Database
 
-// RepositoryShortURL - управление хранением ссылок в БД
-var RepositoryShortURL *database.RepositoryShortURL
+// repositoryShortURL - управление хранением ссылок в БД
+var repositoryShortURL *database.RepositoryShortURL
 
 // Log - логер
 var Log *zap.Logger = zap.NewNop()
 
 // Initialize - инициализация приложения
-func Initialize() error {
+func Initialize(ctx context.Context) error {
 	var err error
 
 	config.InitServerConf(&ServerConf, Log)
+
+	model.Wg = &sync.WaitGroup{}
 
 	Database = database.New(&ServerConf, Log)
 	err = Database.Open()
@@ -49,29 +52,23 @@ func Initialize() error {
 		}
 		Service = service.New(Storage, ServerConf, Log)
 	} else {
-
 		if err := Database.Migrate(); err != nil {
 			return err
 		}
-		RepositoryShortURL = database.NewRepositoryShortURL(Database, Log)
-		Service = service.New(RepositoryShortURL, ServerConf, Log)
-
-		model.Wg = &sync.WaitGroup{}
+		repositoryShortURL = database.NewRepositoryShortURL(Database, Log)
+		Service = service.New(repositoryShortURL, ServerConf, Log)
 		model.ShortURLchan = make(chan model.ShortURLUserID)
-		go RepositoryShortURL.DeleteURLBatchProcessor()
+		model.Wg.Add(1)
+		go repositoryShortURL.DeleteURLBatchProcessor(ctx)
 	}
-
 	ServiceUtils = service.NewServiceUtils(Database, Log)
-
 	return nil
 }
 
 // Close - закрытие приложения
 func Close() {
-
 	errClose := Database.Close()
 	if errClose != nil {
 		Log.Error("Error close connection db", zap.Error(errClose))
 	}
-
 }
