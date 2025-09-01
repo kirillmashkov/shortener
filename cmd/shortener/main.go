@@ -46,6 +46,7 @@ func main() {
 	flag.Parse()
 	err = app.Initialize(ctx)
 	if err != nil {
+		app.Log.Error("can't init app", zap.Error(err))
 		panic(err)
 	}
 

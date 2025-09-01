@@ -25,11 +25,11 @@ var Service *service.Service
 // ServiceUtils - утильные функции
 var ServiceUtils *service.ServiceUtils
 
-// Database - управление по��ключением и миграцией в БД
+// Database - управление подключением и миграцией в БД
 var Database *database.Database
 
-// RepositoryShortURL - управление хранением ссылок в БД
-var RepositoryShortURL *database.RepositoryShortURL
+// repositoryShortURL - управление хранением ссылок в БД
+var repositoryShortURL *database.RepositoryShortURL
 
 // Log - логер
 var Log *zap.Logger = zap.NewNop()
@@ -55,11 +55,11 @@ func Initialize(ctx context.Context) error {
 		if err := Database.Migrate(); err != nil {
 			return err
 		}
-		RepositoryShortURL = database.NewRepositoryShortURL(Database, Log)
-		Service = service.New(RepositoryShortURL, ServerConf, Log)
+		repositoryShortURL = database.NewRepositoryShortURL(Database, Log)
+		Service = service.New(repositoryShortURL, ServerConf, Log)
 		model.ShortURLchan = make(chan model.ShortURLUserID)
 		model.Wg.Add(1)
-		go RepositoryShortURL.DeleteURLBatchProcessor(ctx)
+		go repositoryShortURL.DeleteURLBatchProcessor(ctx)
 	}
 	ServiceUtils = service.NewServiceUtils(Database, Log)
 	return nil
