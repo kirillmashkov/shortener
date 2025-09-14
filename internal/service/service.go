@@ -20,6 +20,7 @@ type storeURL interface {
 	AddBatchURL(ctx context.Context, shortOriginalURL []model.KeyOriginalURL, userID int) error
 	DeleteURLBatchProcessor(ctx context.Context)
 	GetShortURL(ctx context.Context, originalURL string) (string, error)
+	GetStats(ctx context.Context) (int, int, error)
 }
 
 // Service - тип для сервисного слоя по управлению ссылками
@@ -122,4 +123,10 @@ func (s *Service) keyURL() string {
 
 func (s *Service) shortURL(key string) string {
 	return fmt.Sprintf("%s/%s", s.cfg.Redirect, key)
+}
+
+// GetStats - получения кол-ва пользователей и кол-ва коротких ссылок
+func (s *Service) GetStats(ctx context.Context) (model.Stats, error) {
+	usersCount, urlsCount, err := s.storage.GetStats(ctx)
+	return model.Stats{UrlsCount: urlsCount, UsersCount: usersCount}, err
 }
