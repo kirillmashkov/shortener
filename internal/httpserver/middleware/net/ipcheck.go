@@ -10,6 +10,7 @@ import (
 
 const realIPHeader = "X-Real-IP"
 
+//IsFromTrustSubnet - проверка вхождения ip в подсеть
 func IsFromTrustSubnet(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		trustedIPNet, err := netip.ParsePrefix(app.ServerConf.TrustedSubnet)

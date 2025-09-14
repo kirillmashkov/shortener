@@ -215,6 +215,7 @@ func (r *RepositoryShortURL) GetAllURL(ctx context.Context, userID int) ([]model
 	return res, err
 }
 
+// GetStats - получение их БД кол-ва коротких ссылок и кол-ва пользователей из БД
 func (r *RepositoryShortURL) GetStats(ctx context.Context) (int, int, error) {
 	var urlsCount int
 	var usersCount int

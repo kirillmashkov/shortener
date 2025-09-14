@@ -212,6 +212,7 @@ func (storeMap *StoreURLMap) writeToFile(shortURL string, originalURL string, wr
 	return nil
 }
 
+// GetStats - получение кол-ва коротких ссылок и кол-ва пользователей из памяти пока не реализовано
 func (storeMap *StoreURLMap) GetStats(ctx context.Context) (int, int, error) {
 	return 0, 0, errors.New("unsupport operation")
 }

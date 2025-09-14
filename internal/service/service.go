@@ -125,6 +125,7 @@ func (s *Service) shortURL(key string) string {
 	return fmt.Sprintf("%s/%s", s.cfg.Redirect, key)
 }
 
+// GetStats - получения кол-ва пользователей и кол-ва коротких ссылок
 func (s *Service) GetStats(ctx context.Context) (model.Stats, error) {
 	usersCount, urlsCount, err := s.storage.GetStats(ctx)
 	return model.Stats{UrlsCount: urlsCount, UsersCount: usersCount}, err
