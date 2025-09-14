@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
-	"net/url"
 
 	"github.com/kirillmashkov/shortener.git/internal/config"
 	"github.com/kirillmashkov/shortener.git/internal/model"
@@ -20,6 +19,7 @@ type storeURL interface {
 	AddBatchURL(ctx context.Context, shortOriginalURL []model.KeyOriginalURL, userID int) error
 	DeleteURLBatchProcessor(ctx context.Context)
 	GetShortURL(ctx context.Context, originalURL string) (string, error)
+	GetStats(ctx context.Context) (int, int, error)
 }
 
 // Service - тип для сервисного слоя по управлению ссылками
@@ -35,8 +35,7 @@ func New(storage storeURL, config config.ServerConfig, log *zap.Logger) *Service
 }
 
 // GetShortURL возвращает исходную ссылку по короткому названию
-func (s *Service) GetShortURL(ctx context.Context, originalURL *url.URL) (string, bool, bool) {
-	key := originalURL.Path[len("/"):]
+func (s *Service) GetShortURL(ctx context.Context, key string) (string, bool, bool) {
 	url, deleted, exist := s.storage.GetURL(ctx, key)
 
 	if !exist {
@@ -122,4 +121,10 @@ func (s *Service) keyURL() string {
 
 func (s *Service) shortURL(key string) string {
 	return fmt.Sprintf("%s/%s", s.cfg.Redirect, key)
+}
+
+// GetStats - получения кол-ва пользователей и кол-ва коротких ссылок
+func (s *Service) GetStats(ctx context.Context) (model.Stats, error) {
+	usersCount, urlsCount, err := s.storage.GetStats(ctx)
+	return model.Stats{UrlsCount: urlsCount, UsersCount: usersCount}, err
 }
