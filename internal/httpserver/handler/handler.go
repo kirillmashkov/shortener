@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 
 	"github.com/kirillmashkov/shortener.git/internal/app"
 	"github.com/kirillmashkov/shortener.git/internal/httpserver/middleware/security"
@@ -18,7 +17,7 @@ import (
 
 // ServiceShortURL - интерфейс для управления ссылками
 type ServiceShortURL interface {
-	GetShortURL(ctx context.Context, originalURL *url.URL) (string, bool, bool)
+	GetShortURL(ctx context.Context, key string) (string, bool, bool)
 	ProcessURL(ctx context.Context, originalURL string, userID int) (string, error)
 	ProcessURLBatch(ctx context.Context, originalURLs []model.URLToShortBatchRequest, userID int) ([]model.ShortToURLBatchResponse, error)
 	DeleteURLBatch(userID int, shortURLs []string)
@@ -33,7 +32,8 @@ func GetHandler(res http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	url, deleted, exist := app.Service.GetShortURL(req.Context(), req.URL)
+	key := req.URL.Path[len("/"):]
+	url, deleted, exist := app.Service.GetShortURL(req.Context(), key)
 
 	if !exist {
 		http.Error(res, "Key not found", http.StatusBadRequest)

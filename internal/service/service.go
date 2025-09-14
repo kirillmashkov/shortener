@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
-	"net/url"
 
 	"github.com/kirillmashkov/shortener.git/internal/config"
 	"github.com/kirillmashkov/shortener.git/internal/model"
@@ -36,8 +35,7 @@ func New(storage storeURL, config config.ServerConfig, log *zap.Logger) *Service
 }
 
 // GetShortURL возвращает исходную ссылку по короткому названию
-func (s *Service) GetShortURL(ctx context.Context, originalURL *url.URL) (string, bool, bool) {
-	key := originalURL.Path[len("/"):]
+func (s *Service) GetShortURL(ctx context.Context, key string) (string, bool, bool) {
 	url, deleted, exist := s.storage.GetURL(ctx, key)
 
 	if !exist {

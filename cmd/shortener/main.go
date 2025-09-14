@@ -10,11 +10,12 @@ import (
 	"syscall"
 
 	"go.uber.org/zap"
-	
+
 	"github.com/kirillmashkov/shortener.git/internal/app"
 	"github.com/kirillmashkov/shortener.git/internal/httpserver"
 	"github.com/kirillmashkov/shortener.git/internal/logger"
 	"github.com/kirillmashkov/shortener.git/internal/model"
+	pb "github.com/kirillmashkov/shortener.git/internal/proto"
 	"github.com/kirillmashkov/shortener.git/internal/server"
 
 	_ "net/http/pprof"
@@ -60,8 +61,11 @@ func main() {
 		restServer = httpserver.NewHTTP(app.ServerConf.Host)
 	}
 
-	model.Wg.Add(1)
+	grpcServer := pb.New(*app.Service)
+
+	model.Wg.Add(2)
 	go runServer(restServer, sigint, cancel)
+	go runServer(grpcServer, sigint, cancel)
 
 	if model.Wg != nil {
 		model.Wg.Wait()
