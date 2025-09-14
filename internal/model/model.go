@@ -48,6 +48,12 @@ type ShortURLUserID struct {
 	UserID    int
 }
 
+// Stats - для запроса статистики по кол-ву url и пользователей
+type Stats struct {
+	UrlsCount  int `json:"urls"`
+	UsersCount int `json:"users"`
+}
+
 // ShortURLchan - канал для асинхроннго удаления ссылок из БД
 var ShortURLchan chan ShortURLUserID
 

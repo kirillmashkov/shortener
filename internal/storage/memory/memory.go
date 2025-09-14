@@ -211,3 +211,7 @@ func (storeMap *StoreURLMap) writeToFile(shortURL string, originalURL string, wr
 
 	return nil
 }
+
+func (storeMap *StoreURLMap) GetStats(ctx context.Context) (int, int, error) {
+	return 0, 0, errors.New("unsupport operation")
+}

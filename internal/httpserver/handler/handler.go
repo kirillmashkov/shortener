@@ -23,6 +23,7 @@ type ServiceShortURL interface {
 	ProcessURLBatch(ctx context.Context, originalURLs []model.URLToShortBatchRequest, userID int) ([]model.ShortToURLBatchResponse, error)
 	DeleteURLBatch(userID int, shortURLs []string)
 	GetAllURL(ctx context.Context, userID int) ([]model.ShortOriginalURL, error)
+	GetStats(ctx context.Context) (model.Stats, error)
 }
 
 // GetHandler - обработчик REST запроса на получение обычной ссылки по короткой
@@ -230,4 +231,27 @@ func Ping(res http.ResponseWriter, req *http.Request) {
 	}
 
 	res.WriteHeader(http.StatusOK)
+}
+
+// Stats - обработчик REST запроса, возвращает кол-во сокращенных URL и кол-во пользователей
+func Stats(res http.ResponseWriter, req *http.Request) {
+	if req.Method != http.MethodGet {
+		http.Error(res, "Only GET requests are allowed!", http.StatusBadRequest)
+		return
+	}
+
+	stats, err := app.Service.GetStats(req.Context())
+
+	if err != nil {
+		http.Error(res, "Can't get stats", http.StatusInternalServerError)
+		return
+	}
+
+	res.Header().Set("Content-Type", "application/json")
+	res.WriteHeader(http.StatusOK)
+	encoder := json.NewEncoder(res)
+	if err := encoder.Encode(stats); err != nil {
+		app.Log.Debug("error encoding response", zap.Error(err))
+		return
+	}
 }

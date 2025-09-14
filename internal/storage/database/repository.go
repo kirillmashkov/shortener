@@ -214,3 +214,12 @@ func (r *RepositoryShortURL) GetAllURL(ctx context.Context, userID int) ([]model
 
 	return res, err
 }
+
+func (r *RepositoryShortURL) GetStats(ctx context.Context) (int, int, error) {
+	var urlsCount int
+	var usersCount int
+
+	err := r.db.dbpool.QueryRow(ctx, "select count(*), count(distinct created_by) from shorturl").Scan(&urlsCount, &usersCount)
+
+	return usersCount, urlsCount, err
+}

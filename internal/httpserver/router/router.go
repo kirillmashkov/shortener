@@ -7,6 +7,7 @@ import (
 	"github.com/kirillmashkov/shortener.git/internal/httpserver/handler"
 	"github.com/kirillmashkov/shortener.git/internal/httpserver/middleware/compress"
 	"github.com/kirillmashkov/shortener.git/internal/httpserver/middleware/logger"
+	"github.com/kirillmashkov/shortener.git/internal/httpserver/middleware/net"
 	"github.com/kirillmashkov/shortener.git/internal/httpserver/middleware/security"
 
 	"net/http/pprof"
@@ -33,6 +34,11 @@ func Serv() http.Handler {
 	r.Post("/api/shorten/batch", handler.PostGenerateShortURLBatch)
 	r.Delete("/api/user/urls", handler.DeleteURLBatch)
 	r.Get("/ping", handler.Ping)
+
+	r.Group(func(r chi.Router) {
+		r.Use(net.IsFromTrustSubnet)
+		r.Get("/api/internal/stats", handler.Stats)
+	})
 
 	return r
 }
