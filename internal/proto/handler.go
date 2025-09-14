@@ -1,6 +1,7 @@
 package pb
 
 import (
+	"fmt"
 	context "context"
 	"errors"
 	"math/rand"
@@ -62,6 +63,6 @@ func (s *GRPCServer) CreateShort(ctx context.Context, r *CreateShortRequest) (*C
 		return nil, status.Error(codes.Internal, err.Error())
 	}
 
-	return &CreateShortResponse {ResultUrl: shortURL, UserId: string(userID)}, nil
+	return &CreateShortResponse {ResultUrl: shortURL, UserId: fmt.Sprint(userID)}, nil
 
 }
