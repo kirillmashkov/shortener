@@ -61,7 +61,7 @@ func main() {
 		restServer = httpserver.NewHTTP(app.ServerConf.Host)
 	}
 
-	grpcServer := pb.New(*app.Service)
+	grpcServer := pb.New(*app.Service, app.ServerConf.GRPCAddress)
 
 	model.Wg.Add(2)
 	go runServer(restServer, sigint, cancel)

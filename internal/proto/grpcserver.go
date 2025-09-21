@@ -14,12 +14,13 @@ type GRPCServer struct {
 	UnimplementedShortenerServer
 	server    *grpc.Server
 	service service.Service
+	addr 	string
 }
 
 func (s *GRPCServer) Run() error {
 	RegisterShortenerServer(s.server, s)
 
-	listen, err := net.Listen("tcp", "localhost:3200")
+	listen, err := net.Listen("tcp", s.addr)
 	if err != nil {
 		app.Log.Fatal("can't start grpc server", zap.Error(err))
 		return err
@@ -33,8 +34,8 @@ func (s *GRPCServer) Shutdown() error {
 	return nil
 }
 
-func New(service service.Service) server.Server {
+func New(service service.Service, addr string) server.Server {
 	s := grpc.NewServer()
 
-	return &GRPCServer{server: s, service: service}
+	return &GRPCServer{server: s, service: service, addr: addr}
 }

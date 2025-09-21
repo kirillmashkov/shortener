@@ -18,6 +18,7 @@ type ConfigFromFile struct {
 	DatabaseDSN     string `json:"database_dsn"`
 	EnableHTTPS     bool   `json:"enable_https"`
 	TrustedSubnet   string `json:"trusted_subnet"`
+	GRPCAddress   	string `json:"grpc_address"`
 }
 
 // ServerConfig - тип для хранения конфигурации приложения
@@ -29,6 +30,7 @@ type ServerConfig struct {
 	EnableHTTPS   bool   "env:\"ENABLE_HTTPS\""
 	ConfigPath    string "env:\"CONFIG\""
 	TrustedSubnet string "env:\"TRUSTED_SUBNET\""
+	GRPCAddress string "env:\"GRPC_ADDRESS\""
 }
 
 const filenameConfigServer = "config/configserver.json"
@@ -47,6 +49,7 @@ func init() {
 	flag.BoolVar(&ServerArg.EnableHTTPS, "s", false, "run server with https")
 	flag.StringVar(&ServerArg.ConfigPath, "c", "", "config path")
 	flag.StringVar(&ServerArg.TrustedSubnet, "t", "", "trusted subnet")
+	flag.StringVar(&ServerArg.GRPCAddress, "g", "localhost:3200", "grpc server address")
 }
 
 // InitServerConf - определение итоговой конфигурации приложения
@@ -68,6 +71,7 @@ func InitServerConf(conf *ServerConfig, logger *zap.Logger) {
 			DatabaseDSN:     "",
 			EnableHTTPS:     false,
 			TrustedSubnet:   "",
+			GRPCAddress: 	"",
 		}
 	}
 
@@ -77,6 +81,7 @@ func InitServerConf(conf *ServerConfig, logger *zap.Logger) {
 	conf.Connection = getConfigString(ServerEnv.Connection, ServerArg.Connection, configFromFile.DatabaseDSN)
 	conf.EnableHTTPS = getConfigBool(ServerEnv.EnableHTTPS, ServerArg.EnableHTTPS, configFromFile.EnableHTTPS)
 	conf.TrustedSubnet = getConfigString(ServerEnv.TrustedSubnet, ServerArg.TrustedSubnet, configFromFile.TrustedSubnet)
+	conf.GRPCAddress = getConfigString(ServerEnv.GRPCAddress, ServerArg.GRPCAddress, configFromFile.GRPCAddress)
 
 	logger.Info("server config",
 		zap.String("host", conf.Host),

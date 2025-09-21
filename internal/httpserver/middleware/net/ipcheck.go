@@ -28,7 +28,7 @@ func IsFromTrustSubnet(next http.Handler) http.Handler {
 			return
 		}
 
-		if trustedIPNet.Contains(ip) {
+		if !trustedIPNet.Contains(ip) {
 			app.Log.Error("subnet in config doesn't contain ip in header", zap.Error(err))
 			http.Error(w, "forbidden", http.StatusForbidden)
 			return
