@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package shortener;
+
+option go_package = "shortener/pb";
+
+service Shortener {
+    rpc GetURL(GetURLRequest) returns (GetURLResponse);
+    rpc CreateShort(CreateShortRequest) returns (CreateShortResponse);
+}
+
+message GetURLRequest {
+  string url_id = 1;
+}
+
+message GetURLResponse {
+  string full_url = 1;
+}
+
+message CreateShortRequest {
+  string url = 1;
+  string user_id = 2;
+}
+
+message CreateShortResponse {
+  string result_url = 1;
+  string user_id = 2;
+  string url_id = 3;
+}

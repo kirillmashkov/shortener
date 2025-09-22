@@ -17,16 +17,20 @@ type ConfigFromFile struct {
 	FileStoragePath string `json:"file_storage_path"`
 	DatabaseDSN     string `json:"database_dsn"`
 	EnableHTTPS     bool   `json:"enable_https"`
+	TrustedSubnet   string `json:"trusted_subnet"`
+	GRPCAddress   	string `json:"grpc_address"`
 }
 
 // ServerConfig - тип для хранения конфигурации приложения
 type ServerConfig struct {
-	Host        string "env:\"SERVER_ADDRESS\""
-	Redirect    string "env:\"BASE_URL\""
-	FileStorage string "env:\"FILE_STORAGE_PATH\""
-	Connection  string "env:\"DATABASE_DSN\""
-	EnableHTTPS bool   "env:\"ENABLE_HTTPS\""
-	ConfigPath  string "env:\"CONFIG\""
+	Host          string "env:\"SERVER_ADDRESS\""
+	Redirect      string "env:\"BASE_URL\""
+	FileStorage   string "env:\"FILE_STORAGE_PATH\""
+	Connection    string "env:\"DATABASE_DSN\""
+	EnableHTTPS   bool   "env:\"ENABLE_HTTPS\""
+	ConfigPath    string "env:\"CONFIG\""
+	TrustedSubnet string "env:\"TRUSTED_SUBNET\""
+	GRPCAddress string "env:\"GRPC_ADDRESS\""
 }
 
 const filenameConfigServer = "config/configserver.json"
@@ -44,6 +48,8 @@ func init() {
 	flag.StringVar(&ServerArg.Connection, "d", "postgres://postgres:postgres@localhost:5432/postgres?sslmode=disable", "db connection string")
 	flag.BoolVar(&ServerArg.EnableHTTPS, "s", false, "run server with https")
 	flag.StringVar(&ServerArg.ConfigPath, "c", "", "config path")
+	flag.StringVar(&ServerArg.TrustedSubnet, "t", "", "trusted subnet")
+	flag.StringVar(&ServerArg.GRPCAddress, "g", "localhost:3200", "grpc server address")
 }
 
 // InitServerConf - определение итоговой конфигурации приложения
@@ -64,6 +70,8 @@ func InitServerConf(conf *ServerConfig, logger *zap.Logger) {
 			FileStoragePath: "",
 			DatabaseDSN:     "",
 			EnableHTTPS:     false,
+			TrustedSubnet:   "",
+			GRPCAddress: 	"",
 		}
 	}
 
@@ -72,6 +80,8 @@ func InitServerConf(conf *ServerConfig, logger *zap.Logger) {
 	conf.FileStorage = getConfigString(ServerEnv.FileStorage, ServerArg.FileStorage, configFromFile.FileStoragePath)
 	conf.Connection = getConfigString(ServerEnv.Connection, ServerArg.Connection, configFromFile.DatabaseDSN)
 	conf.EnableHTTPS = getConfigBool(ServerEnv.EnableHTTPS, ServerArg.EnableHTTPS, configFromFile.EnableHTTPS)
+	conf.TrustedSubnet = getConfigString(ServerEnv.TrustedSubnet, ServerArg.TrustedSubnet, configFromFile.TrustedSubnet)
+	conf.GRPCAddress = getConfigString(ServerEnv.GRPCAddress, ServerArg.GRPCAddress, configFromFile.GRPCAddress)
 
 	logger.Info("server config",
 		zap.String("host", conf.Host),
